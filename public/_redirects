@@ -1,0 +1,6 @@
+# Proxy the API through Netlify so the browser stays same-origin.
+# This mirrors Vite's dev proxy, and sidesteps CORS entirely.
+/api/*  https://hackathon-be-production.up.railway.app/api/:splat  200
+
+# SPA fallback: every other path is handled by react-router.
+/*  /index.html  200
