@@ -1,0 +1,234 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { createRound, currentRound, runMatching, signUp, withdraw } from '../../api/meetups'
+import { useAuth } from '../../auth/AuthContext'
+import Avatar from '../../components/Avatar'
+import { MatchingOverlay, MatchRevealModal } from '../../components/MatchReveal'
+import { ErrorNote } from '../../components/States'
+import { useToast } from '../../components/Toast'
+import { periodLabel, shortDate } from '../../lib/format'
+
+const RULES = [
+  'A different team',
+  'A different location where possible',
+  "Someone you don't work with",
+]
+
+/** The monthly round: sign up, get paired across the tenure split, meet. */
+export default function MeetupPanel() {
+  const { isAdmin } = useAuth()
+  const say = useToast()
+  const queryClient = useQueryClient()
+  const [matching, setMatching] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+
+  const { data: round, isPending, error } = useQuery({
+    queryKey: ['meetup-round', 'current'],
+    queryFn: currentRound,
+  })
+
+  const invalidateRound = () => queryClient.invalidateQueries({ queryKey: ['meetup-round'] })
+
+  const join = useMutation({
+    mutationFn: () => signUp(round.id),
+    onSuccess: () => {
+      invalidateRound()
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      say("You're in. We'll pair you when sign-ups close.")
+    },
+    onError: (caught) => say(caught.message),
+  })
+
+  const leave = useMutation({
+    mutationFn: () => withdraw(round.id),
+    onSuccess: () => {
+      invalidateRound()
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      say('Withdrawn. Maybe next month.')
+    },
+    onError: (caught) => say(caught.message),
+  })
+
+  // Admin: the matching run is the demo moment, so it gets the full animation.
+  const match = useMutation({
+    mutationFn: () => runMatching(round.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['meetup-round'] })
+      setTimeout(() => {
+        setMatching(false)
+        setRevealed(true)
+      }, 1600)
+    },
+    onError: (caught) => {
+      setMatching(false)
+      say(caught.message)
+    },
+  })
+
+  const openRound = useMutation({
+    mutationFn: () => {
+      const now = new Date()
+      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+      // Sign-ups run from now until a week before the month is out; the API
+      // fills in meetup_date as the last Friday of the period.
+      const closes = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      closes.setDate(closes.getDate() - 7)
+      return createRound({
+        period,
+        title: `${periodLabel(period)} Blind Meetup`,
+        signups_open_at: now.toISOString(),
+        signups_close_at: (closes > now ? closes : new Date(now.getTime() + 6048e5)).toISOString(),
+        status: 'open',
+      })
+    },
+    onSuccess: () => {
+      invalidateRound()
+      say('Round opened.')
+    },
+    onError: (caught) => say(caught.message),
+  })
+
+  const pair = round?.my_pair
+  const signedUp = Boolean(round?.my_signup) && round.my_signup.status !== 'withdrawn'
+
+  if (error) return <ErrorNote error={error} />
+
+  return (
+    <>
+      {matching && <MatchingOverlay />}
+      {revealed && pair && <MatchRevealModal pair={pair} onClose={() => setRevealed(false)} />}
+
+      <div className="relative overflow-hidden rounded-panel bg-acc p-[clamp(28px,4vw,52px)] text-on-acc">
+        <div className="absolute top-[-70px] right-[-70px] h-[280px] w-[280px] rounded-full border-2 border-current opacity-30" style={{ animation: 'floatC 14s ease-in-out infinite' }} />
+        <div className="absolute right-[120px] bottom-[-90px] h-[180px] w-[180px] rounded-full bg-white/[.14]" />
+
+        <div className="relative max-w-[620px]">
+          <p className="m-0 mb-[14px] text-[13.5px] font-bold tracking-[.14em] uppercase opacity-[.78]">Blind Meetup</p>
+          <h1 className="rx-display m-0 text-[clamp(36px,5.4vw,62px)] leading-[.99]">
+            One hour. One colleague you don't know. No agenda.
+          </h1>
+          <p className="m-0 mt-[18px] text-[19px] leading-[1.45] opacity-[.88]">
+            Every month we pair people across teams and continents. You get a name, a coffee slot and an
+            hour without a to-do list.
+          </p>
+        </div>
+
+        {isPending && <p className="relative mt-8 text-[18px] opacity-80">Loading this month's round…</p>}
+
+        {!isPending && !round && (
+          <div className="relative mt-9 rounded-[20px] bg-white/[.16] p-[22px]">
+            <p className="m-0 text-[18px] font-semibold">No round is open right now.</p>
+            {isAdmin && (
+              <button
+                onClick={() => openRound.mutate()}
+                disabled={openRound.isPending}
+                className="rx-btn rx-btn-inv mt-4"
+              >
+                {openRound.isPending ? 'Opening…' : 'Open this month'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {round && (
+          <>
+            <div className="relative mt-[38px] grid max-w-[820px] gap-5 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
+              <div className="rounded-[20px] bg-white/[.16] p-[22px]">
+                <p className="m-0 mb-1.5 text-[13px] font-bold tracking-[.12em] uppercase opacity-80">
+                  {periodLabel(round.period)} round
+                </p>
+                <p className="rx-title m-0 text-[26px]">
+                  {round.is_accepting_signups ? 'Signup closes' : 'Signups closed'}
+                  <br />
+                  {shortDate(round.signups_close_at)}
+                </p>
+              </div>
+              <div className="rounded-[20px] bg-white/[.16] p-[22px]">
+                <p className="m-0 mb-1.5 text-[13px] font-bold tracking-[.12em] uppercase opacity-80">The meetup</p>
+                <p className="rx-title m-0 text-[26px]">{shortDate(round.meetup_date)}</p>
+              </div>
+              <div className="rounded-[20px] bg-white/[.16] p-[22px]">
+                <p className="m-0 mb-1.5 text-[13px] font-bold tracking-[.12em] uppercase opacity-80">Pairing</p>
+                <p className="rx-title m-0 text-[26px]">
+                  6+ years ↔<br />Under 6 years
+                </p>
+              </div>
+            </div>
+
+            <div className="relative mt-[30px] flex flex-wrap gap-x-[26px] gap-y-[10px]">
+              {RULES.map((rule) => (
+                <span key={rule} className="flex items-center gap-[9px] text-[16.5px] font-semibold">
+                  <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-inv text-[13px] text-on-inv">✓</span>
+                  {rule}
+                </span>
+              ))}
+            </div>
+
+            <div className="relative mt-9">
+              {pair?.partner ? (
+                <div className="flex animate-spring flex-wrap items-center gap-4 rounded-[20px] bg-inv p-[20px_24px] text-ink">
+                  <Avatar person={pair.partner} size={52} radius={15} />
+                  <div className="min-w-0">
+                    <p className="rx-eyebrow m-0">You're in for {periodLabel(round.period)}</p>
+                    <p className="rx-title m-0 mt-[3px] text-[23px]">Matched with {pair.partner.name}</p>
+                  </div>
+                  <button onClick={() => setRevealed(true)} className="rx-btn rx-btn-acc ml-auto rounded-[13px] px-5">
+                    See match
+                  </button>
+                </div>
+              ) : signedUp ? (
+                <div className="flex flex-wrap items-center gap-4 rounded-[20px] bg-inv p-[20px_24px] text-ink">
+                  <div className="min-w-0">
+                    <p className="rx-eyebrow m-0">You're in for {periodLabel(round.period)}</p>
+                    <p className="rx-title m-0 mt-[3px] text-[23px]">
+                      {round.signups_count} people signed up so far
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => leave.mutate()}
+                    disabled={leave.isPending}
+                    className="rx-btn rx-btn-ghost ml-auto rounded-[13px] px-5"
+                  >
+                    {leave.isPending ? 'Withdrawing…' : 'Withdraw'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => join.mutate()}
+                  disabled={join.isPending || !round.is_accepting_signups}
+                  className="rx-btn rx-btn-inv rounded-2xl px-8 py-[19px] text-[18px] shadow-[0_10px_28px_rgb(20_18_15/0.18)] hover:-translate-y-[3px] hover:scale-[1.02]"
+                  style={{ minHeight: 58 }}
+                >
+                  {join.isPending
+                    ? 'Signing up…'
+                    : round.is_accepting_signups
+                      ? "Join this month's meetup"
+                      : 'Sign-ups are closed'}
+                </button>
+              )}
+
+              {isAdmin && (
+                <div className="mt-5 flex flex-wrap items-center gap-3 rounded-[16px] border border-white/30 p-4">
+                  <span className="text-[13px] font-bold tracking-[.12em] uppercase opacity-80">Admin</span>
+                  <button
+                    onClick={() => {
+                      setMatching(true)
+                      match.mutate()
+                    }}
+                    disabled={match.isPending}
+                    className="rx-btn rx-btn-inv min-h-[44px] px-4 text-[15px]"
+                  >
+                    {match.isPending ? 'Matching…' : 'Run matching'}
+                  </button>
+                  <span className="text-[14.5px] opacity-80">
+                    {round.signups_count ?? 0} signed up · {round.pairs_count ?? 0} pairs
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}

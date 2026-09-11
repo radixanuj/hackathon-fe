@@ -3,12 +3,35 @@ import { useState } from 'react'
 import Modal from './Modal'
 import { titleCase } from '../lib/format'
 
+// Everything not listed here falls back to a plain text input.
+const INPUT_TYPES = { datetime: 'datetime-local', date: 'date', number: 'number' }
+
+/**
+ * A datetime-local input yields a naked wall-clock string ("2026-09-11T18:30")
+ * with no offset, and the API parses that as UTC. Left alone, every time the
+ * user picks is stored shifted by their offset — and `after:now` rejects
+ * perfectly valid times for anyone behind UTC. So a datetime field leaves here
+ * as a real instant; a `date` field is a plain calendar day and stays as-is.
+ */
+function normalise(values, fields) {
+  const out = { ...values }
+  for (const field of fields) {
+    if (field.type !== 'datetime') continue
+    const value = out[field.key]
+    if (!value) continue
+    const at = new Date(value)
+    if (!Number.isNaN(at.valueOf())) out[field.key] = at.toISOString()
+  }
+  return out
+}
+
 /**
  * The design's "Create something" sheet: a title, a line of intent, a handful
  * of fields, and one button. Field-driven so groups, events, recommendations
  * and stories all reuse it.
  *
- * fields: { key, label, placeholder?, type?: 'text'|'textarea'|'select'|'datetime', options?, required? }
+ * fields: { key, label, placeholder?, options?, min?, max?,
+ *            type?: 'text' | 'textarea' | 'select' | 'datetime' | 'date' | 'number' }
  */
 export default function FormModal({ title, intent, fields, submitLabel, onSubmit, onDone, onClose }) {
   const [values, setValues] = useState(() =>
@@ -16,7 +39,7 @@ export default function FormModal({ title, intent, fields, submitLabel, onSubmit
   )
 
   const mutation = useMutation({
-    mutationFn: () => onSubmit(values),
+    mutationFn: () => onSubmit(normalise(values, fields)),
     onSuccess: (result) => {
       onDone?.(result)
       onClose()
@@ -52,10 +75,12 @@ export default function FormModal({ title, intent, fields, submitLabel, onSubmit
           ) : (
             <input
               className="rx-input"
-              type={field.type === 'datetime' ? 'datetime-local' : 'text'}
+              type={INPUT_TYPES[field.type] ?? 'text'}
               placeholder={field.placeholder}
               value={values[field.key]}
               onChange={set(field.key)}
+              min={field.min}
+              max={field.max}
             />
           )}
           {error?.fieldError?.(field.key) && (

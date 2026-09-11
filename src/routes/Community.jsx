@@ -1,4 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
+import AskTeachTab from './community/AskTeachTab'
+import ChallengesTab from './community/ChallengesTab'
 import EventsTab from './community/EventsTab'
 import GroupsTab from './community/GroupsTab'
 import LearnTab from './community/LearnTab'
@@ -6,7 +8,9 @@ import StoriesTab from './community/StoriesTab'
 
 const TABS = [
   { key: 'groups', label: 'Groups', Panel: GroupsTab },
+  { key: 'challenges', label: 'Challenges', Panel: ChallengesTab },
   { key: 'learn', label: 'Learn & Share', Panel: LearnTab },
+  { key: 'ask-teach', label: 'Ask & Teach', Panel: AskTeachTab },
   { key: 'events', label: 'Events', Panel: EventsTab },
   { key: 'stories', label: 'Stories', Panel: StoriesTab },
 ]

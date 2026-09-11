@@ -6,6 +6,7 @@ import { AvatarStack } from '../../components/Avatar'
 import FormModal from '../../components/FormModal'
 import { Empty, ErrorNote, SkeletonCards } from '../../components/States'
 import { useToast } from '../../components/Toast'
+import OpenInvitesSection from './OpenInvitesSection'
 import { eventEmoji, eventWhen } from '../../lib/format'
 
 export default function EventsTab() {
@@ -117,6 +118,8 @@ export default function EventsTab() {
           </div>
         )}
       </div>
+
+      <OpenInvitesSection />
 
       {creating && (
         <FormModal

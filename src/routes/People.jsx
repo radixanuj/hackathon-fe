@@ -5,6 +5,7 @@ import { listUsers, searchTags } from '../api/people'
 import Avatar from '../components/Avatar'
 import { useOverlays } from '../components/Overlays'
 import { Empty, ErrorNote, SkeletonCards } from '../components/States'
+import SuggestionsStrip from '../components/SuggestionsStrip'
 import { personMeta } from '../lib/format'
 
 const GROUPS = [
@@ -91,6 +92,8 @@ export default function People() {
       <h1 className="rx-display m-0 max-w-[620px] text-[clamp(36px,5vw,58px)] text-pretty">
         Find someone worth talking to
       </h1>
+
+      <SuggestionsStrip limit={3} />
 
       <div className="relative mt-[30px] mb-6 max-w-[660px]">
         <input

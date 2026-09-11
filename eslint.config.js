@@ -5,7 +5,8 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // The design canvas export is vendored reference material, not our source.
+  globalIgnores(['dist', 'Radix Connect navigation prototype']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

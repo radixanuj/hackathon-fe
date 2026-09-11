@@ -1,7 +1,7 @@
 # Radix Connect — frontend
 
-Phase 1 UI for [Radix Connect](../hackathon-be), built against the canvas design
-(`Radix Connect.dc.html`) and the 70-endpoint Laravel API.
+UI for [Radix Connect](../hackathon-be), built against the canvas design
+(`Radix Connect.dc.html`) and the Laravel API — Phase 1 and Phase 2, 129 endpoints.
 
 ## Running it
 
@@ -52,15 +52,26 @@ being threaded through each screen.
 
 | Route | What it covers |
 |---|---|
-| `/` | Dashboard across all six pillars — meetup round, quest suggestion, pot luck, next event, a recommendation, a story |
-| `/people` | Search and the five filter groups: can help with, want to learn, interest, location, team |
-| `/connect` | Blind Meetup (sign up, matching, reveal) and mentoring by topic, plus incoming/outgoing session requests |
-| `/community` | Groups · Learn & Share (recommendations + AMAs) · Events · Stories |
+| `/` | Dashboard across all six pillars, then "Easier ways in" for the Phase 2 surfaces |
+| `/people` | Who should I meet, then search and the five filter groups |
+| `/connect` | Blind Meetup · Buddy · Office Hours · Coffee & Lunch · Mentoring |
+| `/community` | Groups · Challenges · Learn & Share · Ask & Teach · Events · Stories |
 | `/me` | Profile, editable tag sections, and the New Joiner Quest |
 
-## One thing worth knowing
+Phase 2 added eight features, and the brief was explicit that they belong *inside*
+the existing six pillars rather than alongside them. So Connect and Community
+each grew a tab bar instead of new top-level routes, Who Should I Meet leads
+People, Open Invites sit under Events as the step before an Event exists, and
+Stories gained a "For you" mode ranked against your own interests.
+
+## Two things worth knowing
 
 `GET /users` narrows by a single tag at a time. The design lets you stack
 several, so `People` sends the first selection to the server and narrows the
 rest client-side over a generously sized page — exact at the current roster
 size, and the place to revisit if Radix grows past a few hundred people.
+
+`GET /dashboard` does not attach viewer state — no `my_signup` on the round, no
+`my_rsvp` on its events. Home therefore takes those two from
+`/meetups/rounds/current` and `/events?scope=upcoming` instead, which do, and
+lets the dashboard supply everything that doesn't depend on who's asking.

@@ -1,7 +1,10 @@
 import { http, unwrap, unwrapList } from '../lib/http'
 
-/** params: q, category, user_id, page */
+/** params: q, category, user_id, tag, page */
 export const listStories = (params) => http.get('/stories', params).then(unwrapList)
+
+/** Other people's stories, ranked by how many tags match your own interests. */
+export const discoverStories = (params) => http.get('/stories/discover', params).then(unwrapList)
 
 export const getStory = (id) => http.get(`/stories/${id}`).then(unwrap)
 

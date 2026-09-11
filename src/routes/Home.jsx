@@ -9,9 +9,10 @@ import { currentRound, signUp } from '../api/meetups'
 import { useAuth } from '../auth/AuthContext'
 import Avatar, { AvatarStack } from '../components/Avatar'
 import { useOverlays } from '../components/Overlays'
+import SuggestionsStrip from '../components/SuggestionsStrip'
 import { ErrorNote } from '../components/States'
 import { useToast } from '../components/Toast'
-import { avatarColor, eventWhen, initials, periodLabel, personMeta, todayLabel } from '../lib/format'
+import { avatarColor, eventEmoji, eventWhen, initials, periodLabel, personMeta, titleCase, todayLabel } from '../lib/format'
 
 /** One line per interesting thing happening at Radix right now. */
 function buildTicker(dashboard, people) {
@@ -71,6 +72,13 @@ export default function Home() {
   const recommendation = dashboard?.latest_recommendations?.[0]
   const story = dashboard?.latest_stories?.[0]
   const suggestion = quest?.targets?.find((target) => target.status === 'pending')
+
+  const buddy = dashboard?.buddy
+  const questions = dashboard?.questions_i_could_answer ?? []
+  const coffees = dashboard?.open_coffee_invites ?? []
+  const challenges = dashboard?.active_challenges ?? []
+  const teachOffers = dashboard?.teach_offers_seeking_interest ?? []
+  const openInvites = dashboard?.open_invites ?? []
 
   const joinMeetup = useMutation({
     mutationFn: () => signUp(round.id),
@@ -192,6 +200,8 @@ export default function Home() {
         </div>
       </div>
 
+      <SuggestionsStrip limit={3} />
+
       {/* --- Card grid ----------------------------------------------------- */}
       <section className="mt-8 grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
         {/* Blind Meetup */}
@@ -302,7 +312,7 @@ export default function Home() {
             {(skillTags?.items ?? []).map((tag) => (
               <button
                 key={tag.id}
-                onClick={() => navigate(`/connect?topic=${encodeURIComponent(tag.slug)}`)}
+                onClick={() => navigate(`/connect?tab=mentoring&topic=${encodeURIComponent(tag.slug)}`)}
                 className="cursor-pointer rounded-full border-[1.5px] border-edge-soft bg-white px-[17px] py-[11px] text-[15px] font-semibold transition-all duration-200 ease-[cubic-bezier(.2,1.4,.3,1)] hover:-translate-y-[3px] hover:rotate-[-1.5deg] hover:border-acc hover:bg-acc hover:text-on-acc"
               >
                 {tag.name}
@@ -388,6 +398,134 @@ export default function Home() {
           </article>
         )}
       </section>
+
+      {/* --- Easier ways in (Phase 2) --------------------------------------- */}
+      {(buddy || questions.length > 0 || coffees.length > 0 || challenges.length > 0 ||
+        teachOffers.length > 0 || openInvites.length > 0) && (
+        <section className="mt-16">
+          <h2 className="rx-display m-0 mb-1.5 text-[clamp(28px,3.6vw,42px)] tracking-[-.032em]">
+            Easier ways in
+          </h2>
+          <p className="m-0 mb-[26px] max-w-[560px] text-[18px] text-muted">
+            Smaller doors than a meeting invite.
+          </p>
+
+          <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+            {/* Cross-location buddy */}
+            <article className="rx-card rx-card-lift animate-rise p-7">
+              <p className="rx-eyebrow m-0 mb-4">Cross-location buddy</p>
+              {buddy?.buddy ? (
+                <>
+                  <div className="flex items-center gap-4">
+                    <Avatar person={buddy.buddy} size={56} radius={16} />
+                    <div className="min-w-0">
+                      <h3 className="rx-title m-0 text-[22px]">{buddy.buddy.name}</h3>
+                      <p className="m-0 mt-1 text-[15px] text-muted">{personMeta(buddy.buddy)}</p>
+                    </div>
+                  </div>
+                  {buddy.match_reason && (
+                    <p className="m-0 mt-4 text-[16px] leading-[1.5] text-muted">{buddy.match_reason}</p>
+                  )}
+                  <button onClick={() => openProfile(buddy.buddy.id)} className="rx-btn rx-btn-ghost mt-5">
+                    View profile
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="rx-title m-0 text-[23px]">Someone in another office</h3>
+                  <p className="m-0 mt-2 mb-5 text-base leading-[1.45] text-muted">
+                    An ongoing pairing with a colleague you'd never otherwise cross. Different
+                    location, guaranteed.
+                  </p>
+                  <button onClick={() => navigate('/connect?tab=buddy')} className="rx-btn rx-btn-acc">
+                    Find me a buddy
+                  </button>
+                </>
+              )}
+            </article>
+
+            {/* Ask Radix — routed to you by your own tags */}
+            {questions.length > 0 && (
+              <article className="rx-card-dark animate-rise p-7 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
+                <p className="m-0 mb-[14px] text-[12.5px] font-bold tracking-[.14em] text-acc-soft uppercase">
+                  You could answer this
+                </p>
+                <h3 className="rx-title m-0 text-[24px] font-bold">{questions[0].title}</h3>
+                <p className="m-0 mt-3 mb-5 text-[15.5px] text-dim">
+                  Asked by {questions[0].user?.name ?? 'someone here'}
+                  {questions.length > 1 && ` · ${questions.length - 1} more for you`}
+                </p>
+                <button onClick={() => navigate('/community?tab=ask-teach')} className="rx-btn rx-btn-acc">
+                  Take a look
+                </button>
+              </article>
+            )}
+
+            {/* Coffee / lunch / walk */}
+            {coffees.length > 0 && (
+              <article className="rx-card rx-card-lift animate-rise p-7">
+                <p className="rx-eyebrow m-0 mb-4">Free seat</p>
+                <h3 className="rx-title m-0 text-[23px]">
+                  {titleCase(coffees[0].kind)} with {coffees[0].host?.name?.split(' ')[0] ?? 'someone'}
+                </h3>
+                <p className="m-0 mt-2 text-[15.5px] text-muted">{eventWhen(coffees[0])}</p>
+                {coffees[0].note && (
+                  <p className="m-0 mt-3 text-base leading-[1.45] text-muted">{coffees[0].note}</p>
+                )}
+                <button onClick={() => navigate('/connect?tab=coffee')} className="rx-btn rx-btn-acc mt-5">
+                  {coffees[0].seats_left} {coffees[0].seats_left === 1 ? 'seat' : 'seats'} left
+                </button>
+              </article>
+            )}
+
+            {/* Challenges */}
+            {challenges.length > 0 && (
+              <article className="rx-card-soft animate-rise p-7 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
+                <p className="rx-eyebrow m-0 mb-4">Running now</p>
+                <h3 className="rx-title m-0 text-[23px]">{challenges[0].title}</h3>
+                <p className="m-0 mt-2 mb-5 text-base text-muted">
+                  {challenges[0].participants_count} counting {challenges[0].unit}
+                  {challenges[0].days_left !== null && ` · ${challenges[0].days_left} days left`}
+                </p>
+                <button onClick={() => navigate('/community?tab=challenges')} className="rx-btn rx-btn-acc">
+                  Join in
+                </button>
+              </article>
+            )}
+
+            {/* Teach Radix */}
+            {teachOffers.length > 0 && (
+              <article className="rx-card rx-card-lift animate-rise p-7">
+                <p className="rx-eyebrow m-0 mb-4">Someone offered to teach</p>
+                <h3 className="rx-title m-0 text-[23px]">{teachOffers[0].title}</h3>
+                <p className="m-0 mt-2 mb-5 text-base text-muted">
+                  {teachOffers[0].user?.name} · {teachOffers[0].interested_count} of{' '}
+                  {teachOffers[0].min_interested} interested
+                </p>
+                <button onClick={() => navigate('/community?tab=ask-teach')} className="rx-btn rx-btn-acc">
+                  I'd come to this
+                </button>
+              </article>
+            )}
+
+            {/* Open invites */}
+            {openInvites.length > 0 && (
+              <article className="rx-card rx-card-lift animate-rise p-7">
+                <p className="rx-eyebrow m-0 mb-4">Anyone interested?</p>
+                <span className="text-[34px] leading-none">{eventEmoji(openInvites[0].category)}</span>
+                <h3 className="rx-title m-0 mt-3 text-[23px]">{openInvites[0].title}</h3>
+                <p className="m-0 mt-2 mb-5 text-base text-muted">
+                  {openInvites[0].interested_count} in so far
+                  {openInvites[0].rough_timing && ` · ${openInvites[0].rough_timing}`}
+                </p>
+                <button onClick={() => navigate('/community?tab=events')} className="rx-btn rx-btn-acc">
+                  Count me in too
+                </button>
+              </article>
+            )}
+          </div>
+        </section>
+      )}
 
       {isPending && <p className="pt-10 text-[16.5px] text-muted">Loading your Radix…</p>}
     </>
