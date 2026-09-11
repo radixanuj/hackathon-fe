@@ -112,7 +112,8 @@ export default function Me() {
                 Your first Radix mission
               </h2>
               <p className="m-0 mt-[14px] text-[18.5px] leading-[1.45] text-muted">
-                Meet five people outside your immediate team during your first month.
+                Meet five people across Radix in your first month — deliberately across teams,
+                locations and tenure.
                 {quest?.days_remaining !== null && quest?.days_remaining !== undefined && (
                   <> {quest.days_remaining} days left.</>
                 )}

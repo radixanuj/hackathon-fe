@@ -20,7 +20,11 @@ export default function Connect() {
 
   return (
     <section className="animate-rise pt-[52px]">
-      <h1 className="rx-display m-0 mb-[26px] text-[clamp(36px,5vw,58px)]">Connect</h1>
+      <h1 className="rx-display m-0 text-[clamp(36px,5vw,58px)]">Pick a Brain</h1>
+      <p className="m-0 mt-4 mb-[26px] max-w-[640px] text-[18.5px] leading-[1.5] text-muted text-pretty">
+        Thirty minutes. One interesting person. Who knows where it could lead? Get matched with
+        someone new or ask a colleague for mentoring, coaching, advice or a quick knowledge session.
+      </p>
 
       <div className="mb-8 flex flex-wrap gap-1.5 border-b border-line pb-0.5">
         {TABS.map((tab) => {

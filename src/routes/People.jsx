@@ -89,9 +89,11 @@ export default function People() {
 
   return (
     <section className="animate-rise pt-[52px]">
-      <h1 className="rx-display m-0 max-w-[620px] text-[clamp(36px,5vw,58px)] text-pretty">
-        Find someone worth talking to
-      </h1>
+      <h1 className="rx-display m-0 text-[clamp(36px,5vw,58px)]">Who's Who</h1>
+      <p className="m-0 mt-4 max-w-[640px] text-[18.5px] leading-[1.5] text-muted text-pretty">
+        There's more to your colleagues than a job title and a Zoom square. See what people know,
+        what they're into and what they want to learn — and find a reason to start a conversation.
+      </p>
 
       <SuggestionsStrip limit={3} />
 

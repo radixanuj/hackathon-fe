@@ -108,8 +108,9 @@ export default function MeetupPanel() {
             One hour. One colleague you don't know. No agenda.
           </h1>
           <p className="m-0 mt-[18px] text-[19px] leading-[1.45] opacity-[.88]">
-            Every month we pair people across teams and continents. You get a name, a coffee slot and an
-            hour without a to-do list.
+            Sign up each month and we'll pair you with someone at Radix you otherwise probably wouldn't
+            have spoken to — across tenure, and preferably across teams and locations too. It happens
+            around the last Friday of the month.
           </p>
         </div>
 

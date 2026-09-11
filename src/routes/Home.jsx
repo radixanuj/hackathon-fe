@@ -223,7 +223,8 @@ export default function Home() {
                     : `${periodLabel(round.period)} round is closed for sign-ups`}
                 </h2>
                 <p className="m-0 mt-[14px] text-[18px] leading-[1.45] opacity-[.86]">
-                  Meet someone at Radix you probably wouldn't otherwise talk to. One hour, no agenda.
+                  Meet someone at Radix you otherwise probably wouldn't have spoken to. Around the
+                  last Friday of the month.
                 </p>
               </div>
               <button

@@ -58,12 +58,9 @@ export default function StoriesTab() {
     <div className="mt-8 animate-rise">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="rx-display m-0 mb-1.5 text-[clamp(28px,3.6vw,42px)] tracking-[-.032em]">
+          <h2 className="rx-display m-0 text-[clamp(28px,3.6vw,42px)] tracking-[-.032em]">
             Wait — they do that?!
           </h2>
-          <p className="m-0 max-w-[520px] text-[18px] text-muted">
-            What people here get up to when they're not at work.
-          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 rounded-[14px] bg-sand p-1">

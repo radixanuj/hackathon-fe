@@ -6,13 +6,41 @@ import GroupsTab from './community/GroupsTab'
 import LearnTab from './community/LearnTab'
 import StoriesTab from './community/StoriesTab'
 
+// Four of the six pillars live behind these tabs, so the page header belongs to
+// whichever one is open rather than to "Community" as a whole.
+const CROWD = {
+  pillar: 'Find Your Crowd',
+  blurb:
+    'Somewhere at Radix, someone else is almost certainly obsessed with the same thing you are. ' +
+    'Find your people around F1, cricket, books, running, movies, AI — or start a crowd of your own.',
+}
+const SHARING = {
+  pillar: 'Worth Sharing',
+  blurb:
+    'Found an app, tool, hack, podcast, book or idea that more people should know about? Drop it ' +
+    'here. Explore what others are recommending, or share an experience and let people ask you anything.',
+}
+const PLANS = {
+  pillar: 'Make Plans',
+  blurb:
+    `Turn "we should do this sometime" into "who's in?" Plan a trek, dinner, movie, museum ` +
+    'visit, Sunday run, game night or workshop — and let people join.',
+}
+const QUESTS = {
+  pillar: 'Side Quests',
+  blurb:
+    `Your colleagues do some pretty remarkable things when they're not in meetings. Discover the ` +
+    'marathons, treks, travels, new skills, strange hobbies and unexpected stories behind the ' +
+    'people you work with.',
+}
+
 const TABS = [
-  { key: 'groups', label: 'Groups', Panel: GroupsTab },
-  { key: 'challenges', label: 'Challenges', Panel: ChallengesTab },
-  { key: 'learn', label: 'Learn & Share', Panel: LearnTab },
-  { key: 'ask-teach', label: 'Ask & Teach', Panel: AskTeachTab },
-  { key: 'events', label: 'Events', Panel: EventsTab },
-  { key: 'stories', label: 'Stories', Panel: StoriesTab },
+  { key: 'groups', label: 'Groups', ...CROWD, Panel: GroupsTab },
+  { key: 'challenges', label: 'Challenges', ...CROWD, Panel: ChallengesTab },
+  { key: 'learn', label: 'Learn & Share', ...SHARING, Panel: LearnTab },
+  { key: 'ask-teach', label: 'Ask & Teach', ...SHARING, Panel: AskTeachTab },
+  { key: 'events', label: 'Events', ...PLANS, Panel: EventsTab },
+  { key: 'stories', label: 'Stories', ...QUESTS, Panel: StoriesTab },
 ]
 
 export default function Community() {
@@ -22,7 +50,10 @@ export default function Community() {
 
   return (
     <section className="animate-rise pt-[52px]">
-      <h1 className="rx-display m-0 mb-[26px] text-[clamp(36px,5vw,58px)]">Community</h1>
+      <h1 className="rx-display m-0 text-[clamp(36px,5vw,58px)]">{active.pillar}</h1>
+      <p className="m-0 mt-4 mb-[26px] max-w-[640px] text-[18.5px] leading-[1.5] text-muted text-pretty">
+        {active.blurb}
+      </p>
 
       <div className="flex flex-wrap gap-1.5 border-b border-line pb-0.5">
         {TABS.map((tab) => {
