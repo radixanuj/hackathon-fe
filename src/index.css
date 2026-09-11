@@ -142,6 +142,10 @@
     display: inline-flex; align-items: center; gap: 6px;
     border-radius: 999px; padding: 9px 15px; font-size: 15px; font-weight: 600; border: none;
   }
+  /* Profile tag columns stack a lot of these, and a long skill name wraps to two
+     lines at the full size - enough of them and the card is all chip. */
+  .rx-chip-sm { padding: 6px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.3 }
+
   .rx-chip-tint { background: var(--tint); color: var(--acc-ink) }
   .rx-chip-sand { background: var(--color-sand); color: var(--color-ink) }
   .rx-chip-outline { background: #fff; border: 1.5px solid var(--color-edge-soft); color: var(--color-ink) }

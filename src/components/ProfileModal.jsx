@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { listStories } from '../api/stories'
 import { getUser } from '../api/people'
 import { personMeta, tenureLabel } from '../lib/format'
@@ -7,17 +8,34 @@ import Modal from './Modal'
 import { ErrorNote } from './States'
 import { useOverlays } from './Overlays'
 
+/** Past this many, a row collapses behind a "show all" - as the profile page does. */
+const VISIBLE = 5
+
 function TagRow({ label, tags, variant }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (!tags?.length) return null
+
+  const shown = expanded ? tags : tags.slice(0, VISIBLE)
+
   return (
     <div className="min-w-0">
       <p className="rx-eyebrow m-0 mb-3">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <span key={tag.id ?? tag.slug ?? tag.name} className={`rx-chip ${variant}`}>
+      <div className="flex flex-wrap gap-1.5">
+        {shown.map((tag) => (
+          <span key={tag.id ?? tag.slug ?? tag.name} className={`rx-chip rx-chip-sm ${variant}`}>
             {tag.name ?? tag}
           </span>
         ))}
+
+        {tags.length > VISIBLE && (
+          <button
+            onClick={() => setExpanded((value) => !value)}
+            className="rx-chip rx-chip-sm cursor-pointer bg-transparent font-bold text-acc-ink"
+          >
+            {expanded ? 'Show less' : `+${tags.length - VISIBLE} more`}
+          </button>
+        )}
       </div>
     </div>
   )

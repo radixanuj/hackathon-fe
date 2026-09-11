@@ -49,8 +49,10 @@ export function AuthProvider({ children }) {
     }
   }, [status])
 
-  const signIn = useCallback(async (name, password) => {
-    const result = await authApi.demoLogin(name, password)
+  // `identity` is { user_id } for someone chosen from the directory, or { name }
+  // for a person the roster does not have yet.
+  const signIn = useCallback(async (identity, password) => {
+    const result = await authApi.demoLogin(identity, password)
     token.set(result.token)
     setUser(result.user)
     setStatus('authenticated')

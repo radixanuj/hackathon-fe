@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 import { searchTags, syncTags } from '../api/people'
 import { useToast } from './Toast'
 
+/** Past this many, a section collapses behind a "show all" rather than growing. */
+const VISIBLE = 5
+
 /** Everything that isn't "Outside work" is a skill, matching the API's tag types. */
 const typeFor = (kind) => (kind === 'interest' ? 'interest' : 'skill')
 
@@ -24,6 +27,7 @@ export default function TagEditor({ label, kind, tags = [], variant = 'rx-chip-s
   const [entry, setEntry] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
+  const [expanded, setExpanded] = useState(false)
 
   const term = useDebounced(entry.trim(), 180)
 
@@ -120,7 +124,7 @@ export default function TagEditor({ label, kind, tags = [], variant = 'rx-chip-s
   }
 
   return (
-    <div className="rx-card min-w-0 animate-rise rounded-tile p-[26px]">
+    <div className="rx-card min-w-0 animate-rise rounded-tile p-[20px]">
       <div className="mb-[14px] flex items-center justify-between gap-3">
         <p className="rx-eyebrow m-0">{label}</p>
         {!editing && (
@@ -132,24 +136,33 @@ export default function TagEditor({ label, kind, tags = [], variant = 'rx-chip-s
 
       {!editing ? (
         tags.length ? (
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span key={tag.id} className={`rx-chip ${variant}`}>
+          <div className="flex flex-wrap gap-1.5">
+            {(expanded ? tags : tags.slice(0, VISIBLE)).map((tag) => (
+              <span key={tag.id} className={`rx-chip rx-chip-sm ${variant}`}>
                 {tag.name}
               </span>
             ))}
+
+            {tags.length > VISIBLE && (
+              <button
+                onClick={() => setExpanded((value) => !value)}
+                className="rx-chip rx-chip-sm cursor-pointer bg-transparent font-bold text-acc-ink underline decoration-transparent underline-offset-2 transition-colors hover:decoration-current"
+              >
+                {expanded ? 'Show less' : `+${tags.length - VISIBLE} more`}
+              </button>
+            )}
           </div>
         ) : (
           <p className="m-0 text-[15px] text-faint">Nothing here yet — worth filling in.</p>
         )
       ) : (
         <>
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-1.5">
             {draft.map((name) => (
               <button
                 key={name}
                 onClick={() => setDraft((current) => current.filter((item) => item !== name))}
-                className={`rx-chip ${variant} cursor-pointer`}
+                className={`rx-chip rx-chip-sm ${variant} cursor-pointer`}
               >
                 {name} ✕
               </button>
