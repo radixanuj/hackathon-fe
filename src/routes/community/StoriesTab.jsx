@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getMeta } from '../../api/meta'
 import { convertToAma, createStory, discoverStories, listStories, react, removeReaction } from '../../api/stories'
 import Avatar from '../../components/Avatar'
@@ -16,6 +16,131 @@ const REACTIONS = [
   { key: 'mind_blown', emoji: '🤯' },
   { key: 'inspired', emoji: '✨' },
 ]
+
+/*
+  The canvas puts three reactions on the chip row and tucks the rest behind a
+  "☺ +" picker, so the row stays short however many emoji exist. The API stores
+  one reaction per person out of a fixed four, which lands three inline and the
+  fourth in the menu.
+*/
+const INLINE_REACTIONS = REACTIONS.slice(0, 3)
+const PICKER_REACTIONS = REACTIONS.slice(3)
+
+const reactionLabel = (key) => key.replace('_', ' ')
+
+/*
+  The canvas asks for `transform .22s <spring>, background .2s`. Tailwind's
+  scale/rotate utilities set the standalone `scale` and `rotate` properties
+  rather than `transform`, so those have to be named too or the hover snaps.
+*/
+const CHIP_TRANSITION = [
+  'transform .22s cubic-bezier(.2,1.6,.3,1)',
+  'scale .22s cubic-bezier(.2,1.6,.3,1)',
+  'rotate .22s cubic-bezier(.2,1.6,.3,1)',
+  'background-color .2s',
+].join(',')
+
+const PICKER_TRANSITION = 'scale .18s cubic-bezier(.2,1.6,.3,1),background-color .18s'
+
+/**
+ * One story's reaction row: the default chips, whatever was picked out of the
+ * menu promoted beside them, and the picker itself.
+ */
+function Reactions({ story, onReact }) {
+  const [picking, setPicking] = useState(false)
+  const picker = useRef(null)
+
+  // Dismiss the menu the way the notification panel does — an outside click or
+  // Escape — so a stray open picker never sits over the card below it.
+  useEffect(() => {
+    if (!picking) return
+    const onDown = (event) => {
+      if (!picker.current?.contains(event.target)) setPicking(false)
+    }
+    const onKey = (event) => {
+      if (event.key === 'Escape') setPicking(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [picking])
+
+  const mine = story.my_reaction
+  // Picking from the menu would otherwise leave no trace on the row.
+  const promoted = PICKER_REACTIONS.find((reaction) => reaction.key === mine)
+
+  const fire = (reaction) => {
+    onReact({ id: story.id, reaction: reaction.key, mine })
+    setPicking(false)
+  }
+
+  return (
+    <>
+      {INLINE_REACTIONS.map((reaction) => (
+        <button
+          key={reaction.key}
+          onClick={() => fire(reaction)}
+          title={reactionLabel(reaction.key)}
+          aria-pressed={mine === reaction.key}
+          className={`flex min-h-[48px] cursor-pointer items-center gap-2 rounded-full border-none px-[17px] py-3 text-base font-bold hover:scale-110 hover:-rotate-3 hover:bg-tint ${
+            mine === reaction.key ? 'bg-tint text-acc-ink' : 'bg-sand'
+          }`}
+          style={{ transition: CHIP_TRANSITION }}
+        >
+          {reaction.emoji}
+        </button>
+      ))}
+
+      {promoted && (
+        <button
+          onClick={() => fire(promoted)}
+          title={reactionLabel(promoted.key)}
+          aria-pressed
+          className="flex min-h-[48px] cursor-pointer items-center gap-2 rounded-full border border-acc-soft bg-tint px-[17px] py-3 text-base font-bold text-acc-ink"
+          style={{ animation: 'pop .35s cubic-bezier(.2,1.5,.3,1) both' }}
+        >
+          {promoted.emoji}
+        </button>
+      )}
+
+      <div ref={picker} className="relative">
+        <button
+          type="button"
+          onClick={() => setPicking((open) => !open)}
+          aria-expanded={picking}
+          aria-label="More reactions"
+          className="min-h-[48px] cursor-pointer rounded-full border-[1.5px] border-dashed border-[#D9D3C9] bg-white px-4 py-3 text-base font-bold text-muted transition-colors duration-200 hover:border-ink hover:text-ink"
+        >
+          ☺ +
+        </button>
+
+        {picking && (
+          <div
+            className="absolute bottom-[calc(100%+8px)] left-0 z-20 flex w-max max-w-[196px] flex-wrap gap-1 rounded-2xl border border-edge-soft bg-white p-2 shadow-[0_16px_36px_rgb(20_18_15/0.14)]"
+            style={{ animation: 'springIn .3s both' }}
+          >
+            {PICKER_REACTIONS.map((reaction) => (
+              <button
+                key={reaction.key}
+                type="button"
+                onClick={() => fire(reaction)}
+                title={reactionLabel(reaction.key)}
+                aria-pressed={mine === reaction.key}
+                className="h-11 w-11 cursor-pointer rounded-[11px] border-none bg-transparent p-1.5 text-[22px] leading-none hover:scale-125 hover:bg-sand"
+                style={{ transition: PICKER_TRANSITION }}
+              >
+                {reaction.emoji}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
 
 export default function StoriesTab() {
   const say = useToast()
@@ -137,27 +262,7 @@ export default function StoriesTab() {
                   )}
 
                   <div className="flex flex-wrap items-center gap-[9px]">
-                    {REACTIONS.map((reaction) => {
-                      const mine = story.my_reaction === reaction.key
-                      return (
-                        <button
-                          key={reaction.key}
-                          onClick={() =>
-                            toggleReaction.mutate({
-                              id: story.id,
-                              reaction: reaction.key,
-                              mine: story.my_reaction,
-                            })
-                          }
-                          title={reaction.key.replace('_', ' ')}
-                          className={`flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border-none px-[15px] text-base font-bold transition-transform duration-200 ease-[cubic-bezier(.2,1.6,.3,1)] hover:scale-110 hover:-rotate-3 ${
-                            mine ? 'bg-tint text-acc-ink' : 'bg-sand'
-                          }`}
-                        >
-                          {reaction.emoji}
-                        </button>
-                      )
-                    })}
+                    <Reactions story={story} onReact={toggleReaction.mutate} />
                     <span className="text-[15px] text-muted">{story.reactions_count ?? 0}</span>
 
                     {story.user && story.user.id !== user?.id && (

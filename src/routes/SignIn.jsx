@@ -5,6 +5,7 @@ import { searchDirectory } from '../api/auth'
 import { useAuth } from '../auth/AuthContext'
 import Avatar from '../components/Avatar'
 import Logo from '../components/Logo'
+import Texture from '../components/Texture'
 import { personMeta } from '../lib/format'
 
 /**
@@ -114,7 +115,12 @@ export default function SignIn() {
   ]
 
   return (
-    <div className="grid min-h-screen [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))]">
+    <div
+      className="grid min-h-screen bg-white [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))]"
+      style={{ animation: 'fade .4s both' }}
+    >
+      <Texture />
+
       {/* Left: the pitch. */}
       <div className="relative hidden overflow-hidden bg-acc p-[clamp(34px,5vw,68px)] text-on-acc md:flex md:flex-col md:justify-between md:gap-10">
         <div className="absolute top-[-90px] right-[-120px] h-[380px] w-[380px] rounded-full border-2 border-current opacity-[.26]" style={{ animation: 'floatC 17s ease-in-out infinite' }} />
@@ -127,13 +133,22 @@ export default function SignIn() {
           <p className="m-0 mb-4 text-[15px] font-bold tracking-[.16em] uppercase opacity-[.82]">
             In Real Life · Into Radix Life
           </p>
-          <h1 className="rx-display m-0 text-[clamp(38px,5.4vw,68px)] leading-[.98] tracking-[-.038em] text-pretty">
-            There are interesting people around you that you don't know yet.
+          <h1 className="rx-display m-0 text-[clamp(36px,5vw,64px)] leading-[1.02] tracking-[-.038em] text-pretty">
+            <span className="block opacity-[.72]">
+              Geography may shape <span className="italic">where</span> we sit.
+            </span>
+            <span className="block mt-[.12em]">
+              It shouldn’t separate{' '}
+              <span className="relative inline-block">
+                <span
+                  className="absolute right-[-.04em] left-[-.04em] bottom-[.05em] h-[.2em] origin-left bg-inv opacity-[.28]"
+                  style={{ animation: 'drawUl 1s .35s cubic-bezier(.2,.9,.3,1) both' }}
+                />
+                <span className="relative">who we become</span>
+              </span>{' '}
+              together.
+            </span>
           </h1>
-          <p className="m-0 mt-[22px] max-w-[460px] text-[20px] leading-[1.5] opacity-90">
-            98 people. Four continents. One place to actually find each other — beyond roles,
-            meetings and geos.
-          </p>
         </div>
 
         <div className="relative flex max-w-[620px] flex-wrap gap-[11px]">
@@ -150,17 +165,19 @@ export default function SignIn() {
 
       {/* Right: the form. */}
       <div className="flex items-center justify-center bg-white p-[clamp(34px,5vw,68px)]">
-        <form onSubmit={onSubmit} className="w-full max-w-[420px] animate-rise">
+        <form onSubmit={onSubmit} className="relative z-[1] w-full max-w-[420px]" style={{ animation: 'rise .6s .1s both' }}>
           <h2 className="rx-display m-0 text-[clamp(30px,3.6vw,42px)] leading-[1.02]">Come in.</h2>
           <p className="m-0 mt-3 mb-[30px] text-[18.5px] leading-[1.5] text-muted">
             Pick your name and you're in. No passwords here.
           </p>
 
-          <p className="m-0 mb-2.5 text-[15.5px] font-bold">Who are you?</p>
           <div ref={box} className="relative mb-4">
             <input
               className="rx-input min-h-[58px] rounded-[16px] px-[18px] py-[17px] text-[17px]"
               placeholder="Start typing your name…"
+              // The canvas dropped the visible "Who are you?" label; a combobox
+              // still needs a name, so it moves to the accessible layer.
+              aria-label="Your name"
               value={name}
               onChange={(event) => retype(event.target.value)}
               onFocus={() => setOpen(true)}
@@ -194,16 +211,16 @@ export default function SignIn() {
                       type="button"
                       onMouseEnter={() => setHighlight(index)}
                       onClick={() => choose(person)}
-                      className={`flex w-full cursor-pointer items-center gap-3 rounded-[13px] border-none px-2.5 py-2 text-left transition-colors ${
-                        index === active ? 'bg-tint' : 'bg-transparent'
+                      className={`flex min-h-[54px] w-full cursor-pointer items-center gap-[13px] rounded-xl border-none px-3 py-[11px] text-left transition-colors ${
+                        index === active ? 'bg-cream' : 'bg-transparent'
                       }`}
                     >
-                      <Avatar person={person} size={38} radius={12} />
+                      <Avatar person={person} size={40} radius={12} />
                       <span className="min-w-0">
-                        <span className="block truncate text-[15.5px] font-bold text-ink">
+                        <span className="block truncate text-[16.5px] font-bold text-ink">
                           {person.name}
                         </span>
-                        <span className="block truncate text-[13.5px] text-muted">
+                        <span className="mt-0.5 block truncate text-[14.5px] text-muted">
                           {person.job_title || personMeta(person) || 'At Radix'}
                         </span>
                       </span>
@@ -219,7 +236,7 @@ export default function SignIn() {
           <button
             type="submit"
             disabled={pending || !name.trim()}
-            className="rx-btn rx-btn-acc mt-3.5 w-full rounded-ctl py-[18px] text-[17px]"
+            className="rx-btn rx-btn-acc mt-3.5 w-full rounded-[16px] py-[18px] text-[17px] hover:[transform:scale(1.02)]"
             style={{ minHeight: 58 }}
           >
             {pending
@@ -229,8 +246,8 @@ export default function SignIn() {
                 : 'Enter IRL'}
           </button>
 
-          <p className="m-0 mt-7 text-[15.5px] leading-[1.5] text-faint text-pretty">
-            Built by us, for us. Your profile is visible to colleagues, nobody outside.
+          <p className="m-0 mt-7 font-display text-[18px] font-extrabold tracking-[-.015em] text-ink">
+            Built by Radicals, for Radicals
           </p>
         </form>
       </div>

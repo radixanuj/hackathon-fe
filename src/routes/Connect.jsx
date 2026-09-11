@@ -136,7 +136,7 @@ function BlindMeetupCard() {
               </button>
             </div>
           ) : signedUp ? (
-            <div className="rounded-[18px] bg-white/[.16] p-[16px 18px] text-[15.5px] font-bold">
+            <div className="rounded-[18px] bg-white/[.16] p-[16px_18px] text-[15.5px] font-bold">
               You're in for {periodLabel(round?.period)}. We'll pair you when sign-ups close.
             </div>
           ) : (

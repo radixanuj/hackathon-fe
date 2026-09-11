@@ -138,7 +138,7 @@ export default function Home() {
           </div>
 
           {/* Five floating faces from the design mosaic. */}
-          <div className="relative min-h-[400px] animate-rise">
+          <div className="relative min-h-[400px]" style={{ animation: 'rise .7s .1s both' }}>
             {heroFaces.map((person, index) => {
               const layout = HERO_LAYOUT[index]
               if (!layout) return null
@@ -177,7 +177,7 @@ export default function Home() {
       <section className="mt-8 grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
         {/* 1. Blind Meetup (spans 2) */}
         {round && (
-          <article className="relative col-span-2 min-w-0 animate-rise overflow-hidden rounded-card bg-acc p-[34px] text-on-acc transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
+          <article className="relative col-span-2 min-w-0 overflow-hidden rounded-card bg-acc p-[34px] text-on-acc transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5" style={{ animation: 'rise .6s .05s both' }}>
             <div className="absolute inset-0 opacity-[.14]" style={{ background: 'linear-gradient(100deg,transparent 20%,#fff 50%,transparent 80%)', animation: 'sweep 6s 1.4s ease-in-out infinite' }} />
             <div className="absolute right-[-40px] bottom-[-70px] h-60 w-60 rounded-full border-2 border-current opacity-[.28]" />
             {round.signups_count > 0 && (
@@ -211,8 +211,8 @@ export default function Home() {
         )}
 
         {/* 2. Someone to know — Parag Barhate */}
-        <article className="rx-card rx-card-lift animate-rise p-7 hover:rotate-[-.5deg]">
-          <p className="rx-eyebrow m-0 mb-[18px]">Someone to know</p>
+        <article className="rx-card rx-card-lift p-7 hover:rotate-[-.5deg]" style={{ animation: 'rise .6s .12s both' }}>
+          <p className="rx-eyebrow m-0 mb-[18px] text-[13px] tracking-[.14em]">Someone to know</p>
           <div className="flex items-center gap-4">
             <img
               src="/photos/parag.png"
@@ -225,32 +225,32 @@ export default function Home() {
             </div>
           </div>
           <p className="m-0 mt-5 mb-[22px] text-[17px] leading-[1.5]">
-            There's more knowledge inside Radix than any org chart can show. Start a conversation
+            There’s more knowledge inside Radix than any org chart can show. Start a conversation
             with Parag and discover what he knows.
           </p>
           <button
             onClick={() => (parag ? openProfile(parag.id) : say('Parag isn’t on the roster yet.'))}
             className="rx-btn rx-btn-ghost"
           >
-            View Parag's profile
+            View Parag’s profile
           </button>
         </article>
 
         {/* 3. Nudge-a-Radical (Boop) */}
-        <article className="relative flex min-h-[280px] min-w-0 animate-rise flex-col justify-between overflow-hidden rounded-card border-[1.5px] border-dashed border-acc-soft bg-cream p-7">
-          <div className="relative grid min-h-[118px] place-items-center">
+        <article className="relative flex min-h-[280px] min-w-0 flex-col justify-between overflow-hidden rounded-card border-[1.5px] border-dashed border-acc-soft bg-cream p-7" style={{ animation: 'rise .6s .16s both' }}>
+          <div className="relative grid min-h-[130px] place-items-center">
             {rolling ? (
-              <Boop poking loop className="block h-auto w-full max-w-[260px] text-acc" />
+              <Boop poking loop className="block h-auto w-full max-w-[240px] text-acc" />
             ) : rolled ? (
               <span className="flex animate-tada items-center gap-[14px]">
-                <Avatar person={rolled} size={70} radius={20} />
+                <Avatar person={rolled} size={60} radius={18} />
                 <span className="min-w-0">
-                  <span className="block font-display text-[22px] font-bold tracking-[-.02em]">{rolled.name}</span>
+                  <span className="block font-display text-[21px] font-bold tracking-[-.02em]">{rolled.name}</span>
                   <span className="mt-[3px] block text-[15px] text-muted">{personMeta(rolled)}</span>
                 </span>
               </span>
             ) : (
-              <Boop poking={poking} className="block h-auto w-full max-w-[260px] text-acc" />
+              <Boop poking={poking} className="block h-auto w-full max-w-[240px] text-acc" />
             )}
           </div>
           <div>
@@ -304,7 +304,7 @@ export default function Home() {
         </article>
 
         {/* 4. Want to learn something? */}
-        <article className="rx-card-soft animate-rise p-7 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
+        <article className="rx-card-soft p-7 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5" style={{ animation: 'rise .6s .18s both' }}>
           <h3 className="rx-title m-0 text-[25px]">Want to learn something?</h3>
           <p className="m-0 mt-2 mb-5 text-base text-muted">People here have offered to talk about:</p>
           <div className="flex flex-wrap gap-[9px]">
@@ -321,8 +321,8 @@ export default function Home() {
         </article>
 
         {/* 5. This weekend — Sunday Morning Run — Dubai */}
-        <article className="rx-card rx-card-lift animate-rise p-7 hover:rotate-[.5deg]">
-          <p className="rx-eyebrow m-0 mb-4">This weekend</p>
+        <article className="rx-card rx-card-lift p-7 hover:rotate-[.5deg]" style={{ animation: 'rise .6s .24s both' }}>
+          <p className="rx-eyebrow m-0 mb-4 text-[13px] tracking-[.14em]">This weekend</p>
           <h3 className="rx-title m-0 text-[26px] leading-[1.1]">
             Sunday Morning Run
             <br />
@@ -363,8 +363,8 @@ export default function Home() {
         </article>
 
         {/* 6. Recommended by Karn Jajoo */}
-        <article className="rx-card rx-card-lift animate-rise p-7">
-          <p className="rx-eyebrow m-0 mb-4">Recommended by Karn Jajoo</p>
+        <article className="rx-card rx-card-lift p-7" style={{ animation: 'rise .6s .3s both' }}>
+          <p className="rx-eyebrow m-0 mb-4 text-[13px] tracking-[.14em]">Recommended by Karn Jajoo</p>
           <div className="flex items-start gap-4">
             <span className="h-[76px] w-[58px] flex-none rounded-[10px] bg-acc" />
             <div className="min-w-0">
@@ -385,7 +385,7 @@ export default function Home() {
         </article>
 
         {/* 7. Story — Tanisha HYROX (spans 2) */}
-        <article className="rx-card-dark col-span-2 animate-rise overflow-hidden p-0 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
+        <article className="rx-card-dark col-span-2 overflow-hidden p-0 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5" style={{ animation: 'rise .6s .36s both' }}>
           <div className="grid [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
             {/* Image is absolute so its natural aspect ratio doesn't push the
                 whole row taller — the tile settles at the text side's height. */}
@@ -405,7 +405,7 @@ export default function Home() {
               </h3>
               <p className="m-0 mt-[14px] mb-6 text-[16.5px] leading-[1.5] text-dim">
                 8km of running broken up by 8 brutal workout stations, all back to back, all on a
-                timer. That's not a small thing. That's extraordinary.
+                timer. That’s not a small thing. That’s extraordinary.
               </p>
               <div className="flex flex-wrap gap-[10px]">
                 <button

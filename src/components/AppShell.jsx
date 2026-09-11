@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import Logo from './Logo'
 import NotificationBell from './NotificationBell'
+import Texture from './Texture'
 
 const NAV = [
   { to: '/people', label: "Who's Who" },
@@ -17,11 +18,13 @@ export default function AppShell({ children }) {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white">
+      <Texture />
+
       <header className="sticky top-0 z-[60] border-b border-line bg-white/[.88] backdrop-blur-[16px]">
         <div className="mx-auto flex max-w-[1220px] flex-wrap items-center gap-4 px-[22px] py-[13px]">
           <button
             onClick={() => navigate('/')}
-            className="flex cursor-pointer items-center border-none bg-transparent p-0 text-ink"
+            className="flex flex-none cursor-pointer items-center border-none bg-transparent p-0 text-ink"
             aria-label="IRL — home"
           >
             <Logo size={25} />
@@ -46,16 +49,21 @@ export default function AppShell({ children }) {
 
           <NotificationBell />
 
+          {/* A 40px circle to sit beside the bell, as the canvas pairs them. */}
           <button
             onClick={signOut}
-            className="cursor-pointer border-none bg-transparent text-[14.5px] font-semibold text-faint transition-colors hover:text-ink"
+            title="Sign out"
+            aria-label="Sign out"
+            className="grid h-10 w-10 flex-none cursor-pointer place-items-center rounded-full border-[1.5px] border-edge bg-white text-[17px] leading-none hover:-translate-y-0.5 hover:border-ink"
+            style={{ transition: 'border-color .2s, translate .2s' }}
           >
-            Sign out
+            ⏻
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1220px] px-[22px] pb-[140px]">{children}</main>
+      {/* Sits above the fixed texture, as the canvas stacks them. */}
+      <main className="relative z-[1] mx-auto max-w-[1220px] px-[22px] pb-[140px]">{children}</main>
     </div>
   )
 }

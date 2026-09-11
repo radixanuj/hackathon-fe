@@ -66,20 +66,22 @@ export default function NotificationBell() {
   const items = data?.items ?? []
 
   return (
-    <div ref={wrapper} className="relative">
+    <div ref={wrapper} className="relative flex-none">
       <button
         onClick={() => setOpen((value) => !value)}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         aria-expanded={open}
-        className={`relative grid h-[42px] w-[42px] cursor-pointer place-items-center rounded-full border-[1.5px] text-[17px] transition-colors ${
-          open ? 'border-ink bg-sand' : 'border-edge bg-white hover:border-ink'
+        className={`relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border-[1.5px] bg-white text-[17px] hover:-translate-y-0.5 hover:border-ink ${
+          open ? 'border-ink' : 'border-edge'
         }`}
+        style={{ transition: 'translate .22s cubic-bezier(.2,1.4,.3,1), border-color .2s' }}
       >
-        <span aria-hidden="true" className={unread ? 'animate-wiggle' : undefined}>
-          🔔
-        </span>
+        <span aria-hidden="true">🔔</span>
         {unread > 0 && (
-          <span className="absolute -top-[3px] -right-[3px] grid h-[21px] min-w-[21px] animate-pop place-items-center rounded-full bg-acc px-[5px] text-[11.5px] font-extrabold text-on-acc">
+          <span
+            className="absolute -top-[3px] -right-[3px] grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-acc px-[5px] text-[11.5px] font-extrabold text-on-acc"
+            style={{ animation: 'pop .45s cubic-bezier(.2,1.6,.3,1) both' }}
+          >
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -89,48 +91,54 @@ export default function NotificationBell() {
         <div
           role="dialog"
           aria-label="Notifications"
-          className="absolute top-[52px] right-0 z-[80] max-h-[min(74vh,620px)] w-[min(92vw,420px)] animate-bump overflow-auto rounded-panel border border-edge bg-white p-[14px] shadow-[0_28px_70px_rgb(20_18_15/0.22)]"
+          className="absolute top-[52px] right-0 z-[80] w-[min(384px,calc(100vw-44px))] overflow-hidden rounded-[22px] border border-edge bg-white shadow-[0_28px_64px_rgb(20_18_15/0.18)]"
+          style={{ animation: 'springIn .4s cubic-bezier(.2,1.25,.3,1) both' }}
         >
-          <div className="flex items-center justify-between gap-3 px-1 pb-3">
-            <h2 className="rx-title m-0 text-[19px]">Notifications</h2>
+          <div className="flex items-center gap-3 px-[22px] pt-5 pb-3.5">
+            <h2 className="m-0 font-display text-[22px] font-extrabold tracking-[-.026em]">
+              Happening
+            </h2>
             {unread > 0 && (
               <button
                 onClick={() => readEverything.mutate()}
                 disabled={readEverything.isPending}
-                className="rx-link text-[14px] disabled:opacity-50"
+                className="ml-auto cursor-pointer border-none bg-transparent p-0 text-[14.5px] font-bold whitespace-nowrap text-acc-ink disabled:opacity-50"
               >
                 Mark all read
               </button>
             )}
           </div>
 
-          {isPending && <p className="px-1 py-6 text-[15.5px] text-muted">Loading…</p>}
+          {/* The canvas scrolls the list inside the panel so the heading and
+              "Mark all read" stay put; grid-cols-1 keeps a long single-line
+              body from sizing an auto track and widening the whole panel. */}
+          <div className="max-h-[56vh] overflow-auto px-2.5 pb-2.5">
+            {isPending && <p className="px-1 py-6 text-[15.5px] text-muted">Loading…</p>}
 
-          {!isPending && items.length === 0 && (
-            <p className="px-1 py-8 text-center text-[15.5px] text-muted">
-              Nothing new. Anything that happens to you or your plans turns up here.
-            </p>
-          )}
+            {!isPending && items.length === 0 && (
+              <p className="px-1 py-8 text-center text-[15.5px] text-muted">
+                Nothing new. Anything that happens to you or your plans turns up here.
+              </p>
+            )}
 
-          {/* grid-cols-1 rather than a bare grid: an auto track sizes to the
-              widest row, and a long single-line body would push the panel wide. */}
-          <div className="grid grid-cols-1 gap-2">
-            {items.map((notification) => (
-              <div key={notification.id} className="min-w-0" onClick={() => setOpen(false)}>
-                <NotificationItem notification={notification} actions={actions} compact />
-              </div>
-            ))}
+            <div className="grid grid-cols-1 gap-1">
+              {items.map((notification) => (
+                <div key={notification.id} className="min-w-0" onClick={() => setOpen(false)}>
+                  <NotificationItem notification={notification} actions={actions} compact />
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setOpen(false)
+                navigate('/notifications')
+              }}
+              className="rx-btn rx-btn-ghost mt-2 w-full text-[15px]"
+            >
+              See all notifications
+            </button>
           </div>
-
-          <button
-            onClick={() => {
-              setOpen(false)
-              navigate('/notifications')
-            }}
-            className="rx-btn rx-btn-ghost mt-3 w-full text-[15px]"
-          >
-            See all notifications
-          </button>
         </div>
       )}
     </div>

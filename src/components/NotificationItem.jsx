@@ -21,34 +21,62 @@ export default function NotificationItem({ notification, actions, compact = fals
 
   return (
     <article
-      className={`flex min-w-0 gap-[14px] rounded-tile border p-[14px] transition-colors ${
-        unread ? 'border-acc-soft bg-tint' : 'border-edge bg-white hover:bg-cream'
-      }`}
+      className={
+        compact
+          ? // The canvas panel row: no outline, tint for unread, cream on hover.
+            `flex min-w-0 gap-[13px] rounded-[16px] border-none p-[14px] transition-colors ${
+              unread ? 'bg-tint' : 'bg-white hover:bg-cream'
+            }`
+          : `flex min-w-0 gap-[14px] rounded-tile border p-[14px] transition-colors ${
+              unread ? 'border-acc-soft bg-tint' : 'border-edge bg-white hover:bg-cream'
+            }`
+      }
     >
       <button
         onClick={open}
         className="flex min-w-0 flex-1 cursor-pointer items-start gap-[13px] border-none bg-transparent p-0 text-left"
       >
-        <span
-          aria-hidden="true"
-          className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[14px] bg-white text-[19px] shadow-[0_1px_3px_rgb(20_18_15/0.07)]"
-        >
-          {notification.icon}
-        </span>
+        {/* The canvas tiles the person who did the thing; the category emoji
+            is the fallback when a notification has no actor. */}
+        {compact && notification.actor ? (
+          <Avatar person={notification.actor} size={42} radius={13} />
+        ) : (
+          <span
+            aria-hidden="true"
+            className={`grid h-[42px] w-[42px] flex-none place-items-center text-[19px] ${
+              compact
+                ? 'rounded-[13px] bg-sand'
+                : 'rounded-[14px] bg-white shadow-[0_1px_3px_rgb(20_18_15/0.07)]'
+            }`}
+          >
+            {notification.icon}
+          </span>
+        )}
 
         <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-2">
-            <span
-              className={`min-w-0 flex-1 text-[16px] leading-[1.35] ${unread ? 'font-bold text-ink' : 'font-semibold text-ink'}`}
-            >
-              {notification.title}
+          {compact ? (
+            <>
+              <span className="block text-[15.5px] leading-[1.4] text-ink">
+                {notification.title}
+              </span>
+              <span className="mt-1 block text-[13.5px] text-faint">
+                {timeAgo(notification.created_at)}
+              </span>
+            </>
+          ) : (
+            <span className="flex items-baseline gap-2">
+              <span
+                className={`min-w-0 flex-1 text-[16px] leading-[1.35] ${unread ? 'font-bold text-ink' : 'font-semibold text-ink'}`}
+              >
+                {notification.title}
+              </span>
+              <span className="flex-none text-[13px] whitespace-nowrap text-faint">
+                {timeAgo(notification.created_at)}
+              </span>
             </span>
-            <span className="flex-none text-[13px] whitespace-nowrap text-faint">
-              {timeAgo(notification.created_at)}
-            </span>
-          </span>
+          )}
 
-          {notification.body && (
+          {!compact && notification.body && (
             <span className="mt-1 block truncate text-[15px] leading-[1.45] text-muted">
               {notification.body}
             </span>
@@ -71,6 +99,14 @@ export default function NotificationItem({ notification, actions, compact = fals
             </span>
           )}
         </span>
+
+        {/* Unread marker — the panel's only cue once the row loses its border. */}
+        {compact && unread && (
+          <span
+            aria-hidden="true"
+            className="mt-1.5 h-[9px] w-[9px] flex-none rounded-full bg-acc"
+          />
+        )}
       </button>
 
       {!compact && (
