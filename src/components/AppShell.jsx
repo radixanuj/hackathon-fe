@@ -4,8 +4,9 @@ import Logo from './Logo'
 import NotificationBell from './NotificationBell'
 import Texture from './Texture'
 
+// Five tabs, as the canvas ships them. Home has no tab of its own — the logo
+// is the way back, which is why it carries the home label.
 const NAV = [
-  { to: '/', label: 'Home' },
   { to: '/people', label: "Who's Who" },
   { to: '/connect', label: 'Pick a Brain' },
   { to: '/community', label: 'Find Your Crowd' },
@@ -32,18 +33,15 @@ export default function AppShell({ children }) {
           </button>
 
           {/* The sign-in line, carried into the shell so the mark keeps its
-              promise on every page. Dropped on narrow screens, where the nav
-              already wraps and has first claim on the row. */}
-          <span className="hidden flex-none items-center gap-[14px] md:flex">
-            <span className="h-[22px] w-px flex-none bg-edge-strong" />
-            <span className="font-display text-[15.5px] font-extrabold tracking-[-.015em] text-ink">
-              Built by Radicals, for Radicals
-            </span>
+              promise on every page. A rule down its left edge rather than a
+              separate bar, so it reads as a continuation of the logo. */}
+          <span className="flex-none border-l border-edge-soft pl-[14px] text-[14px] font-bold tracking-[-.01em] whitespace-nowrap text-muted">
+            Built by Radicals, for Radicals
           </span>
 
           <nav className="ml-auto flex flex-wrap gap-[2px]">
             {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className="relative">
+              <NavLink key={item.to} to={item.to} className="relative">
                 {({ isActive }) => (
                   <span className="relative block cursor-pointer rounded-xl px-[15px] pt-[10px] pb-[13px] text-[15.5px] transition-colors hover:bg-sand">
                     <span className={isActive ? 'font-bold text-acc-ink' : 'font-semibold text-muted'}>

@@ -16,6 +16,12 @@ export const updateMe = (payload) => http.patch('/me', payload).then(unwrap)
 /** Replaces one whole tag section. kind: can_talk_about | can_help_with | want_to_learn | interest */
 export const syncTags = (kind, tags) => http.put('/me/tags', { kind, tags }).then(unwrap)
 
+/**
+ * Replaces the whole "Currently into" list — up to four { label, value } lines.
+ * The icon comes back resolved from the label, so there is none to send.
+ */
+export const updateCurrently = (currently) => http.put('/me/currently', { currently }).then(unwrap)
+
 /** Params: q, type, slug, featured, limit. `featured` is the curated topic row, in its own order. */
 export const searchTags = (params) => http.get('/tags', params).then(unwrapList)
 

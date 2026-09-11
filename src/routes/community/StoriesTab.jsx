@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getMeta } from '../../api/meta'
-import { convertToAma, createStory, discoverStories, listStories, react, removeReaction } from '../../api/stories'
+import { convertToAma, createStory, discoverStories, react, removeReaction } from '../../api/stories'
 import Avatar from '../../components/Avatar'
-import FeaturedBanner, { BannerGhost, BannerPrimary } from '../../components/FeaturedBanner'
 import FormModal from '../../components/FormModal'
 import { useOverlays } from '../../components/Overlays'
 import { Empty, ErrorNote, SkeletonCards } from '../../components/States'
 import { useToast } from '../../components/Toast'
 import { personMeta, storyEmoji } from '../../lib/format'
 import { useAuth } from '../../auth/AuthContext'
+
+/** The story the tab opens on. Anything else falls in behind it, in server order. */
+const HIGHLIGHT = 'Monsoon in Maharashtra is a vibe like no other!'
 
 const REACTIONS = [
   { key: 'clap', emoji: '👏' },
@@ -43,23 +45,43 @@ const CHIP_TRANSITION = [
 
 const PICKER_TRANSITION = 'scale .18s cubic-bezier(.2,1.6,.3,1),background-color .18s'
 
-/**
- * One story's reaction row: the default chips, whatever was picked out of the
- * menu promoted beside them, and the picker itself.
- */
-function Reactions({ story, onReact }) {
-  const [picking, setPicking] = useState(false)
-  const picker = useRef(null)
+/* Same story: `translate` is its own property in Tailwind v4, so the card lift
+   needs it named beside `transform`. */
+const CARD_TRANSITION = [
+  'transform .35s cubic-bezier(.2,.9,.3,1)',
+  'translate .35s cubic-bezier(.2,.9,.3,1)',
+  'box-shadow .35s',
+].join(',')
 
-  // Dismiss the menu the way the notification panel does — an outside click or
-  // Escape — so a stray open picker never sits over the card below it.
+/** A story the compose card posts has no category picker, and this is the one
+ *  the API keeps for "doesn't fit the other five". */
+const DROP_CATEGORY = 'other'
+
+/**
+ * The API wants a title and a body; the compose card asks one question. The
+ * opening sentence becomes the headline and the whole note stays as the body.
+ */
+function headline(text) {
+  const firstLine = text.split('\n')[0].trim() || text.trim()
+  const stop = firstLine.search(/[.!?]/)
+  const candidate = stop > 20 ? firstLine.slice(0, stop) : firstLine
+  return candidate.length > 120 ? `${candidate.slice(0, 119).trimEnd()}…` : candidate
+}
+
+/**
+ * Close a popover the way the notification panel does — an outside click or
+ * Escape — so a stray open picker never sits over the card below it.
+ */
+function useDismissable(open, setOpen) {
+  const ref = useRef(null)
+
   useEffect(() => {
-    if (!picking) return
+    if (!open) return
     const onDown = (event) => {
-      if (!picker.current?.contains(event.target)) setPicking(false)
+      if (!ref.current?.contains(event.target)) setOpen(false)
     }
     const onKey = (event) => {
-      if (event.key === 'Escape') setPicking(false)
+      if (event.key === 'Escape') setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -67,7 +89,39 @@ function Reactions({ story, onReact }) {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [picking])
+  }, [open, setOpen])
+
+  return ref
+}
+
+/**
+ * A story's picture. Absolutely positioned so a portrait shot crops to the
+ * frame rather than rendering at its own aspect ratio; the category emoji
+ * stands in for the stories that arrived without a `media_url`.
+ */
+function StoryPhoto({ story, className, emojiClassName }) {
+  return (
+    <div className={`relative grid place-items-center overflow-hidden ${className}`}>
+      {story.media_url ? (
+        <img
+          src={story.media_url}
+          alt=""
+          className="absolute inset-0 block h-full w-full object-cover"
+        />
+      ) : (
+        <span className={`leading-none ${emojiClassName}`}>{storyEmoji(story.category)}</span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * One story's reaction row: the default chips, whatever was picked out of the
+ * menu promoted beside them, and the picker itself.
+ */
+function Reactions({ story, onReact }) {
+  const [picking, setPicking] = useState(false)
+  const picker = useDismissable(picking, setPicking)
 
   const mine = story.my_reaction
   // Picking from the menu would otherwise leave no trace on the row.
@@ -143,20 +197,150 @@ function Reactions({ story, onReact }) {
   )
 }
 
+/**
+ * The same row, on the accent slab. The chips invert instead of sitting on
+ * sand, and the picker's outline borrows the slab's own text colour.
+ *
+ * The API keeps one total — `reactions_count` — rather than a tally per emoji,
+ * so the count rides the chip you gave (a ✓ marks it) and the row ends with
+ * the total rather than printing the same number four times.
+ */
+function LeadReactions({ story, onReact }) {
+  const [picking, setPicking] = useState(false)
+  const picker = useDismissable(picking, setPicking)
+
+  const mine = story.my_reaction
+  const count = story.reactions_count ?? 0
+  const promoted = PICKER_REACTIONS.find((reaction) => reaction.key === mine)
+
+  const fire = (reaction) => {
+    onReact({ id: story.id, reaction: reaction.key, mine })
+    setPicking(false)
+  }
+
+  const chip = (reaction, extra = '') => (
+    <button
+      key={reaction.key}
+      onClick={() => fire(reaction)}
+      title={mine === reaction.key ? 'Take it back' : reactionLabel(reaction.key)}
+      aria-pressed={mine === reaction.key}
+      className={`flex min-h-[48px] cursor-pointer items-center gap-2 rounded-full border-none bg-inv px-[18px] py-3 text-base font-bold text-on-inv hover:scale-110 hover:-rotate-3 ${extra}`}
+      style={{ transition: CHIP_TRANSITION }}
+    >
+      {reaction.emoji}
+      {mine === reaction.key && <span>✓ {count}</span>}
+    </button>
+  )
+
+  return (
+    <>
+      {INLINE_REACTIONS.map((reaction) => chip(reaction))}
+      {promoted && chip(promoted, 'animate-pop')}
+
+      <div ref={picker} className="relative">
+        <button
+          type="button"
+          onClick={() => setPicking((open) => !open)}
+          aria-expanded={picking}
+          aria-label="More reactions"
+          className="min-h-[48px] cursor-pointer rounded-full border-[1.5px] border-dashed border-current bg-transparent px-4 py-3 text-base font-bold opacity-80 transition-opacity duration-200 hover:opacity-100"
+        >
+          ☺ +
+        </button>
+
+        {picking && (
+          <div
+            className="absolute bottom-[calc(100%+8px)] left-0 z-20 flex w-[196px] flex-wrap gap-1 rounded-[16px] border border-edge-soft bg-white p-2 shadow-[0_16px_36px_rgb(20_18_15/0.2)]"
+            style={{ animation: 'springIn .3s both' }}
+          >
+            {PICKER_REACTIONS.map((reaction) => (
+              <button
+                key={reaction.key}
+                type="button"
+                onClick={() => fire(reaction)}
+                title={reactionLabel(reaction.key)}
+                aria-pressed={mine === reaction.key}
+                className="h-11 w-11 cursor-pointer rounded-[11px] border-none bg-transparent p-1.5 text-[22px] leading-none text-ink hover:scale-125 hover:bg-sand"
+                style={{ transition: PICKER_TRANSITION }}
+              >
+                {reaction.emoji}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!mine && (
+        <span className="text-[15px] font-semibold opacity-80">
+          {count === 0 ? 'Nobody has reacted yet.' : `${count} ${count === 1 ? 'reaction' : 'reactions'}`}
+        </span>
+      )}
+    </>
+  )
+}
+
+/**
+ * First tile in the grid: the short way in. No photo drop — the API takes a
+ * `media_url`, not an upload, and the full sheet behind "Tell yours" is where
+ * a link, a category and tags belong.
+ */
+function DropMine({ onPost, onMore, pending }) {
+  const [draft, setDraft] = useState('')
+
+  const submit = () => {
+    const text = draft.trim()
+    if (!text || pending) return
+    onPost(text, () => setDraft(''))
+  }
+
+  return (
+    <article className="flex min-w-0 flex-col rounded-[26px] border-[1.5px] border-dashed border-acc-soft bg-tint p-[26px]">
+      <p className="m-0 mb-2.5 text-[12.5px] font-bold tracking-[.14em] text-acc-ink uppercase">
+        Your turn
+      </p>
+      <h3 className="rx-title m-0 text-[26px] font-extrabold leading-[1.05] tracking-[-.03em]">
+        Drop mine
+      </h3>
+      <p className="m-0 mt-2.5 mb-4 text-[16.5px] leading-[1.5] text-muted">
+        Something you did, made, climbed, cooked or survived. A couple of lines is plenty.
+      </p>
+
+      <textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        placeholder="I spent six months learning to…"
+        aria-label="Your story"
+        className="rx-textarea min-h-[104px] p-[15px] text-base leading-[1.45]"
+      />
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <button
+          type="button"
+          onClick={submit}
+          disabled={pending || draft.trim().length === 0}
+          className="rx-btn rx-btn-acc min-h-[50px] rounded-[14px] px-[22px] py-3.5 text-base"
+        >
+          {pending ? 'Posting…' : 'Post it'}
+        </button>
+        <button type="button" onClick={onMore} className="rx-link">
+          Add a photo or tags →
+        </button>
+      </div>
+    </article>
+  )
+}
+
 export default function StoriesTab() {
   const say = useToast()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const { openRequest } = useOverlays()
   const [creating, setCreating] = useState(false)
-  // 'discover' ranks other people's stories by how many tags match your profile.
-  const [mode, setMode] = useState('discover')
-
   const { data: meta } = useQuery({ queryKey: ['meta'], queryFn: getMeta })
+  // Ranked by how many tags match your profile, rather than newest first.
   const { data, isPending, error } = useQuery({
-    queryKey: ['stories', { mode }],
-    queryFn: () =>
-      mode === 'discover' ? discoverStories({ per_page: 30 }) : listStories({ per_page: 30 }),
+    queryKey: ['stories', { mode: 'discover' }],
+    queryFn: () => discoverStories({ per_page: 30 }),
   })
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['stories'] })
@@ -178,132 +362,121 @@ export default function StoriesTab() {
     onError: (caught) => say(caught.message),
   })
 
+  // The same create the "Tell yours" sheet runs, minus the fields the compose
+  // card doesn't ask for.
+  const dropStory = useMutation({
+    mutationFn: (text) => createStory({ title: headline(text), body: text, category: DROP_CATEGORY }),
+    onSuccess: () => {
+      refresh()
+      say("It's up. Expect questions.")
+    },
+    onError: (caught) => say(caught.message),
+  })
+
   // The newest story gets the accent slab; the rest fill the grid. Only worth
   // doing when there is still a grid left behind it.
   const { total, lead, rest } = useMemo(() => {
     const items = data?.items ?? []
-    const featured = items.length >= 2
+    if (items.length < 2) return { total: items.length, lead: null, rest: items }
+    const hero = items.find((story) => story.title === HIGHLIGHT) ?? items[0]
     return {
       total: items.length,
-      lead: featured ? items[0] : null,
-      rest: featured ? items.slice(1) : items,
+      lead: hero,
+      rest: items.filter((story) => story.id !== hero.id),
     }
   }, [data])
 
-  // The slab stands in for the lead's card, so it has to carry what that card's
-  // chip row carried: the reaction you gave, and the count that sat beside it.
-  const leadReaction = REACTIONS.find((reaction) => reaction.key === lead?.my_reaction)
-  const leadCount = lead?.reactions_count ?? 0
-  const leadNote =
-    leadCount === 0
-      ? 'Nobody has reacted yet. Go on.'
-      : `${leadCount} ${leadCount === 1 ? 'person has' : 'people have'} reacted`
-
   return (
     <div className="mt-8 animate-rise">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="rx-display m-0 text-[clamp(28px,3.6vw,42px)] tracking-[-.032em]">
-            Wait — they do that?!
-          </h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1 rounded-[14px] bg-sand p-1">
-            {[
-              ['discover', 'For you'],
-              ['all', 'Everything'],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                onClick={() => setMode(value)}
-                className={
-                  mode === value
-                    ? 'cursor-pointer rounded-[11px] border-none bg-white px-[22px] py-[11px] text-[15.5px] font-bold shadow-[0_2px_8px_rgb(20_18_15/0.08)]'
-                    : 'cursor-pointer rounded-[11px] border-none bg-transparent px-[22px] py-[11px] text-[15.5px] font-semibold text-muted'
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setCreating(true)} className="rx-btn rx-btn-dark rx-btn-lg">
-            Tell yours
-          </button>
-        </div>
-      </div>
+      <ErrorNote error={error} />
 
-      <ErrorNote error={error} className="mt-6" />
-
-      <div className="mt-[26px]">
+      <div>
         {isPending ? (
           <SkeletonCards count={3} height={420} />
-        ) : total === 0 ? (
-          <Empty
-            title={mode === 'discover' ? 'Nothing matching your interests yet.' : 'No stories yet.'}
-            hint={
-              mode === 'discover'
-                ? 'Add a few interests on your profile, or read everything instead.'
-                : 'Somebody here has done something surprising. Probably you.'
-            }
-          />
         ) : (
           <>
-            {lead && (
-              <FeaturedBanner
-                eyebrow="Latest from after hrs"
-                title={`${storyEmoji(lead.category)} ${lead.title}`}
-                meta={lead.body}
-                note={leadNote}
-                stack={[lead.user].filter(Boolean)}
-                stackLine={lead.user ? `${lead.user.name} · ${personMeta(lead.user)}` : undefined}
-              >
-                {/*
-                  There is room for one reaction here rather than the whole chip
-                  row, so it holds the one you gave — tap again to take it back —
-                  and the clap until you do.
-                */}
-                <BannerPrimary
-                  onClick={() =>
-                    toggleReaction.mutate({
-                      id: lead.id,
-                      reaction: leadReaction?.key ?? 'clap',
-                      mine: lead.my_reaction,
-                    })
-                  }
-                  disabled={toggleReaction.isPending}
-                  title={leadReaction ? 'Take it back' : reactionLabel('clap')}
-                >
-                  {leadReaction ? `${leadReaction.emoji} You reacted` : '👏 Nice one'}
-                </BannerPrimary>
-
-                {lead.user && lead.user.id !== user?.id && (
-                  <BannerGhost onClick={() => openRequest(lead.user, lead.title)}>Ask about it</BannerGhost>
-                )}
-                {lead.user?.id === user?.id && !lead.ama_id && (
-                  <BannerGhost onClick={() => toAma.mutate(lead.id)} disabled={toAma.isPending}>
-                    Turn into an AMA
-                  </BannerGhost>
-                )}
-              </FeaturedBanner>
+            {total === 0 && (
+              <Empty
+                title="Nothing matching your interests yet."
+                hint="Add a few interests on your profile — or drop the first story yourself."
+              />
             )}
 
-            <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
-              {rest.map((story) => (
-                <article key={story.id} className="rx-card rx-card-lift animate-rise overflow-hidden">
-                  {/* The photo is absolute so a portrait one crops to the strip
-                      rather than rendering at its own aspect ratio over the text:
-                      `h-full` has nothing to resolve against in a centred grid. */}
-                  <div className="relative grid h-[230px] place-items-center overflow-hidden bg-sand">
-                    {story.media_url ? (
-                      <img
-                        src={story.media_url}
-                        alt=""
-                        className="absolute inset-0 block h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-[64px] leading-none">{storyEmoji(story.category)}</span>
+            {lead && (
+              /* After hrs leads on the picture: the photo takes one column of the
+                 slab and the story sits in the other, so the tab opens on a face
+                 rather than a headline. */
+              <article className="relative mb-[18px] grid overflow-hidden rounded-[28px] bg-acc text-on-acc [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
+                <StoryPhoto
+                  story={lead}
+                  className="min-h-[300px] bg-white/[.12]"
+                  emojiClassName="text-[86px]"
+                />
+
+                <div className="flex min-w-0 flex-col justify-center p-[clamp(26px,3.4vw,40px)]">
+                  <p className="m-0 mb-3.5 text-[13px] font-bold tracking-[.14em] uppercase opacity-[.78]">
+                    Latest from after hrs
+                  </p>
+                  <h3 className="rx-display m-0 text-[clamp(28px,3.6vw,42px)] leading-[1.03] tracking-[-.032em]">
+                    {lead.title}
+                  </h3>
+                  {lead.user && (
+                    <p className="m-0 mt-3 text-[17px] font-bold opacity-90">
+                      {lead.user.name} · {personMeta(lead.user)}
+                    </p>
+                  )}
+                  {lead.body && (
+                    <p className="m-0 mt-3.5 text-[18px] leading-[1.45] opacity-[.88]">{lead.body}</p>
+                  )}
+
+                  <div className="h-6" />
+
+                  <div className="flex flex-wrap items-center gap-[9px]">
+                    <LeadReactions story={lead} onReact={toggleReaction.mutate} />
+
+                    {lead.user && lead.user.id !== user?.id && (
+                      <button
+                        type="button"
+                        onClick={() => openRequest(lead.user, lead.title)}
+                        className="min-h-[48px] cursor-pointer rounded-full border-[1.5px] border-current bg-transparent px-[22px] py-3 text-base font-bold opacity-85 transition-opacity duration-200 hover:opacity-100"
+                      >
+                        Ask about it
+                      </button>
+                    )}
+                    {lead.user?.id === user?.id && !lead.ama_id && (
+                      <button
+                        type="button"
+                        onClick={() => toAma.mutate(lead.id)}
+                        disabled={toAma.isPending}
+                        className="min-h-[48px] cursor-pointer rounded-full border-[1.5px] border-current bg-transparent px-[22px] py-3 text-base font-bold opacity-85 transition-opacity duration-200 hover:opacity-100 disabled:opacity-55"
+                      >
+                        Turn into an AMA
+                      </button>
                     )}
                   </div>
+                </div>
+              </article>
+            )}
+
+            <div
+              className={`grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))] ${
+                total === 0 ? 'mt-[18px]' : ''
+              }`}
+            >
+              <DropMine
+                onPost={(text, clear) => dropStory.mutate(text, { onSuccess: clear })}
+                onMore={() => setCreating(true)}
+                pending={dropStory.isPending}
+              />
+
+              {rest.map((story) => (
+                <article
+                  key={story.id}
+                  className="animate-rise min-w-0 overflow-hidden rounded-[26px] border border-edge bg-white hover:-translate-y-[7px] hover:shadow-[0_24px_48px_rgb(20_18_15/0.10)]"
+                  style={{ transition: CARD_TRANSITION }}
+                >
+                  <StoryPhoto story={story} className="h-[230px] bg-sand" emojiClassName="text-[64px]" />
+
                   <div className="p-[26px]">
                     <h3 className="rx-title m-0 text-[26px] font-extrabold tracking-[-.03em] leading-[1.05]">
                       {story.title}

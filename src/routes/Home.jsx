@@ -19,13 +19,15 @@ const LEARN_TAGS = ['Leadership', 'Photography', 'Python', 'Personal Finance', '
 /** Faces on the design's Sunday Morning Run card. */
 const RUN_AVATARS = ['KJ', 'SR', 'NN', 'AV']
 
-// Positions and shapes for the five floating hero tiles - matches the design mosaic.
+// Positions and shapes for the five floating hero tiles - matches the design
+// mosaic. The middle tile sits a touch proud of the rest, hence the heavier
+// shadow on it.
 const HERO_LAYOUT = [
-  { left: '2%', top: '8%', w: 132, h: 158, anim: 'floatA 8s ease-in-out infinite' },
-  { left: '33%', top: 0, w: 126, h: 150, anim: 'floatB 10s ease-in-out infinite' },
-  { right: '2%', top: '10%', w: 120, h: 144, anim: 'floatA 11s .6s ease-in-out infinite' },
-  { left: '14%', bottom: 0, w: 118, h: 140, anim: 'floatB 9s .3s ease-in-out infinite' },
-  { right: '8%', bottom: 0, w: 112, h: 134, anim: 'floatC 12s ease-in-out infinite' },
+  { left: '2%', top: '8%', w: 132, h: 158, anim: 'floatA 8s ease-in-out infinite', lift: 0.1 },
+  { left: '33%', top: 0, w: 126, h: 150, anim: 'floatB 10s ease-in-out infinite', lift: 0.14 },
+  { right: '2%', top: '10%', w: 120, h: 144, anim: 'floatA 11s .6s ease-in-out infinite', lift: 0.1 },
+  { left: '14%', bottom: 0, w: 118, h: 140, anim: 'floatB 9s .3s ease-in-out infinite', lift: 0.1 },
+  { right: '8%', bottom: 0, w: 112, h: 134, anim: 'floatC 12s ease-in-out infinite', lift: 0.1 },
 ]
 
 export default function Home() {
@@ -144,19 +146,21 @@ export default function Home() {
               if (!layout) return null
               const photo = personPhoto(person)
               if (!photo) return null
+              const { w, h, anim, lift, ...place } = layout
               return (
                 <button
                   key={person.id}
                   onClick={() => openProfile(person.id)}
                   title={person.name}
-                  className="absolute overflow-hidden border-none bg-cream p-0 shadow-[0_16px_36px_rgb(20_18_15/0.10)]"
+                  className="absolute overflow-hidden border-none bg-cream p-0"
                   style={{
-                    ...layout,
-                    width: layout.w,
-                    height: layout.h,
+                    ...place,
+                    width: w,
+                    height: h,
                     borderRadius: 22,
                     cursor: 'pointer',
-                    animation: layout.anim,
+                    animation: anim,
+                    boxShadow: `0 16px 36px rgb(20 18 15 / ${lift})`,
                   }}
                 >
                   <img src={photo} alt={person.name} className="block h-full w-full object-cover" loading="lazy" />
@@ -236,13 +240,30 @@ export default function Home() {
           </button>
         </article>
 
-        {/* 3. Nudge-a-Radical (Boop) */}
-        <article className="relative flex min-h-[280px] min-w-0 flex-col justify-between overflow-hidden rounded-card border-[1.5px] border-dashed border-acc-soft bg-cream p-7" style={{ animation: 'rise .6s .16s both' }}>
+        {/* 3. Nudge-a-Radical (Boop). The canvas leads with the title, keeps
+            Boop (or whoever came up) in the middle and parks the buttons at
+            the foot of the card. */}
+        <article className="relative flex min-h-[280px] min-w-0 flex-col justify-between gap-5 overflow-hidden rounded-card border-[1.5px] border-dashed border-acc-soft bg-cream p-7" style={{ animation: 'rise .6s .16s both' }}>
+          <div>
+            <h3 className="rx-title m-0 mb-1.5 text-[23px]">Nudge-a-Radical</h3>
+            {/* The heading stays put, so this line carries the state. */}
+            <p className="m-0 text-base leading-[1.45] text-muted">
+              {rolling
+                ? 'Ninety-eight people, four continents.'
+                : sent
+                  ? `It’s ${rolled.name.split(' ')[0]}’s turn now.` +
+                    (sent.streak > 1 ? ` That’s ${sent.streak} nudges between you.` : '')
+                  : rolled
+                    ? (rolled.intro?.split('.')[0] ?? personMeta(rolled)) + '.'
+                    : 'A tiny gesture. A good old-fashioned poke. That’s the whole deal.'}
+            </p>
+          </div>
+
           <div className="relative grid min-h-[130px] place-items-center">
             {rolling ? (
               <Boop poking loop className="block h-auto w-full max-w-[240px] text-acc" />
             ) : rolled ? (
-              <span className="flex animate-tada items-center gap-[14px]">
+              <span className="flex w-full animate-tada items-center gap-[14px] rounded-[20px] border border-edge-soft bg-white px-[18px] py-4">
                 <Avatar person={rolled} size={60} radius={18} />
                 <span className="min-w-0">
                   <span className="block font-display text-[21px] font-bold tracking-[-.02em]">{rolled.name}</span>
@@ -253,53 +274,39 @@ export default function Home() {
               <Boop poking={poking} className="block h-auto w-full max-w-[240px] text-acc" />
             )}
           </div>
-          <div>
-            <h3 className="rx-title m-0 mb-1.5 text-[23px]">
-              {rolling
-                ? 'Finding a Radical…'
-                : sent
-                  ? 'Nudged.'
-                  : rolled
-                    ? 'Say hello?'
-                    : 'Nudge-a-Radical'}
-            </h3>
-            <p className="m-0 mb-[18px] text-base leading-[1.45] text-muted">
-              {rolling
-                ? 'Ninety-eight people, four continents.'
-                : sent
-                  ? `It’s ${rolled.name.split(' ')[0]}’s turn now.` +
-                    (sent.streak > 1 ? ` That’s ${sent.streak} nudges between you.` : '')
-                  : rolled
-                    ? (rolled.intro?.split('.')[0] ?? personMeta(rolled)) + '.'
-                    : 'A tiny gesture. A quick hello. A good old-fashioned poke. That’s the whole deal.'}
-            </p>
-            <div className="flex flex-wrap gap-[9px]">
-              {rolled && !sent ? (
-                <button
-                  onClick={() => nudge.mutate(rolled)}
-                  disabled={rolling || nudge.isPending}
-                  className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
-                >
-                  <BoopMark size={15} poking={poking} loop={nudge.isPending} />
-                  {nudge.isPending ? 'Nudging…' : `Nudge ${rolled.name.split(' ')[0]}`}
-                </button>
-              ) : (
-                <button
-                  onClick={shuffle}
-                  disabled={rolling}
-                  className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
-                >
-                  <BoopMark size={15} poking={poking} loop={rolling} />
-                  {rolling ? 'Shuffling…' : sent ? 'Nudge someone else' : 'Nudge someone'}
-                </button>
-              )}
 
-              {rolled && !sent && (
-                <button onClick={shuffle} disabled={rolling} className="rx-btn rx-btn-ghost">
-                  Someone else
-                </button>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-[9px]">
+            {rolled && !sent ? (
+              <button
+                onClick={() => nudge.mutate(rolled)}
+                disabled={rolling || nudge.isPending}
+                className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
+              >
+                <BoopMark size={15} poking={poking} loop={nudge.isPending} />
+                {nudge.isPending ? 'Nudging…' : `Nudge ${rolled.name.split(' ')[0]}`}
+              </button>
+            ) : (
+              <button
+                onClick={shuffle}
+                disabled={rolling}
+                className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
+              >
+                <BoopMark size={15} poking={poking} loop={rolling} />
+                {rolling ? 'Shuffling…' : sent ? 'Nudge someone else' : 'Nudge someone'}
+              </button>
+            )}
+
+            {rolled && !rolling && (
+              <button
+                onClick={() => {
+                  setRolled(null)
+                  setSent(null)
+                }}
+                className="rx-btn rx-btn-ghost"
+              >
+                Start over
+              </button>
+            )}
           </div>
         </article>
 

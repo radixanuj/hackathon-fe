@@ -1,14 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { me as fetchMe } from '../api/auth'
 import { listGroups } from '../api/groups'
-import { getQuest, regenerateQuest, updateTarget } from '../api/quest'
 import { updateMe } from '../api/people'
 import { useAuth } from '../auth/AuthContext'
-import Avatar from '../components/Avatar'
+import CurrentlyEditor from '../components/CurrentlyEditor'
 import FormModal from '../components/FormModal'
 import { useOverlays } from '../components/Overlays'
-import QuestComplete from '../components/QuestComplete'
 import { ErrorNote } from '../components/States'
 import TagEditor from '../components/TagEditor'
 import { useToast } from '../components/Toast'
@@ -20,7 +18,6 @@ export default function Me() {
   const queryClient = useQueryClient()
   const { openProfile } = useOverlays()
   const [editing, setEditing] = useState(false)
-  const [celebrating, setCelebrating] = useState(false)
 
   const { data: profile, error } = useQuery({
     queryKey: ['me'],
@@ -28,49 +25,15 @@ export default function Me() {
     initialData: user,
   })
 
-  const { data: quest } = useQuery({ queryKey: ['quest'], queryFn: getQuest })
   const { data: groups } = useQuery({
     queryKey: ['groups', { mine: true }],
     queryFn: () => listGroups({ mine: true, per_page: 50 }),
   })
 
-  const refreshQuest = () => queryClient.invalidateQueries({ queryKey: ['quest'] })
-
-  const mark = useMutation({
-    mutationFn: ({ id, status }) => updateTarget(id, { status }),
-    onSuccess: async (_, variables) => {
-      await refreshQuest()
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      // The quest auto-completes server-side once nothing is pending.
-      const fresh = await queryClient.fetchQuery({ queryKey: ['quest'], queryFn: getQuest })
-      if (variables.status === 'met' && fresh?.status === 'completed') setCelebrating(true)
-    },
-    onError: (caught) => say(caught.message),
-  })
-
-  const regenerate = useMutation({
-    mutationFn: regenerateQuest,
-    onSuccess: () => {
-      refreshQuest()
-      say('Five new people to meet.')
-    },
-    onError: (caught) => say(caught.message),
-  })
-
-  const targets = quest?.targets ?? []
-  const metCount = quest?.met_count ?? targets.filter((target) => target.status === 'met').length
-  const percent = targets.length ? Math.round((metCount / targets.length) * 100) : 0
-  const teamCount = new Set(targets.map((target) => target.person?.team).filter(Boolean)).size
-  const locationCount = new Set(targets.map((target) => target.person?.location).filter(Boolean)).size
-
   if (error) return <div className="pt-14"><ErrorNote error={error} /></div>
 
   return (
     <section className="animate-rise pt-[52px]">
-      {celebrating && (
-        <QuestComplete onClose={() => setCelebrating(false)} teams={teamCount} locations={locationCount} />
-      )}
-
       {/* --- Header ------------------------------------------------------- */}
       <div className="flex flex-wrap items-center gap-[26px]">
         <span className="relative h-28 w-28 flex-none">
@@ -133,13 +96,6 @@ export default function Me() {
 
       {profile && <ProfileCompletion profile={profile} />}
 
-      {profile?.intro && (
-        <div className="rx-card mt-[18px] min-w-0 animate-rise rounded-tile p-[26px]">
-          <p className="rx-eyebrow m-0 mb-4">About you</p>
-          <p className="m-0 max-w-[640px] text-[18px] leading-[1.55] text-pretty">{profile.intro}</p>
-        </div>
-      )}
-
       {/* --- Profile sections --------------------------------------------- */}
       <div className="mt-[18px] grid gap-[18px] [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
         <TagEditor
@@ -156,6 +112,7 @@ export default function Me() {
         />
         <TagEditor label="You want to learn" kind="want_to_learn" tags={profile?.want_to_learn} />
         <TagEditor label="Outside work" kind="interest" tags={profile?.interests} />
+        <CurrentlyEditor entries={profile?.currently ?? []} />
 
         <div className="rx-card min-w-0 animate-rise rounded-tile p-[26px]">
           <p className="rx-eyebrow m-0 mb-[14px]">Your groups</p>
@@ -172,112 +129,6 @@ export default function Me() {
           )}
         </div>
       </div>
-
-      {/* --- New Joiner Quest --------------------------------------------- */}
-      {targets.length > 0 && (
-        <div className="relative mt-[26px] animate-rise overflow-hidden rounded-panel bg-cream p-[clamp(26px,3.4vw,44px)]">
-          <div className="absolute top-[-60px] right-[-60px] h-[220px] w-[220px] rounded-full bg-tint" style={{ animation: 'floatC 13s ease-in-out infinite' }} />
-
-          <div className="relative flex flex-wrap items-end justify-between gap-[22px]">
-            <div className="max-w-[520px]">
-              <p className="m-0 mb-3 text-[13.5px] font-bold tracking-[.14em] text-acc-ink uppercase">
-                New Joiner Quest
-              </p>
-              <h2 className="rx-display m-0 text-[clamp(30px,4vw,44px)] leading-[1.02]">
-                Your first mission on IRL
-              </h2>
-              <p className="m-0 mt-[14px] text-[18.5px] leading-[1.45] text-muted">
-                Meet five people across Radix in your first month — deliberately across teams,
-                locations and tenure.
-                {quest?.days_remaining !== null && quest?.days_remaining !== undefined && (
-                  <> {quest.days_remaining} days left.</>
-                )}
-              </p>
-            </div>
-            <div className="flex-none text-right">
-              <p className="rx-display m-0 text-[clamp(40px,6vw,64px)] tracking-[-.04em]">
-                {metCount} / {targets.length}
-              </p>
-              <p className="m-0 mt-0.5 text-base text-muted">people met</p>
-            </div>
-          </div>
-
-          <div className="relative mt-7 h-2.5 overflow-hidden rounded-full bg-[#EDE8E0]">
-            <div
-              className="h-full rounded-full bg-acc transition-[width] duration-700 ease-[cubic-bezier(.2,.9,.3,1)]"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
-
-          <div className="relative mt-[26px] grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(215px,1fr))]">
-            {targets.map((target) => {
-              const done = target.status === 'met'
-              const skipped = target.status === 'skipped'
-              return (
-                <article
-                  key={target.id}
-                  className="min-w-0 animate-rise rounded-[22px] bg-white p-[22px] transition-transform duration-300 ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-[5px]"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar person={target.person} size={50} radius={15} />
-                    {done ? (
-                      <span className="ml-auto grid h-7 w-7 animate-pop place-items-center rounded-full bg-acc text-[15px] text-on-acc">
-                        ✓
-                      </span>
-                    ) : skipped ? (
-                      <span className="ml-auto text-[13px] font-bold text-faint">Skipped</span>
-                    ) : (
-                      <span className="ml-auto h-7 w-7 rounded-full border-2 border-edge-strong" />
-                    )}
-                  </div>
-
-                  <h3 className="rx-title m-0 mt-4 text-[20px]">{target.person?.name}</h3>
-                  <p className="m-0 mt-[3px] text-[14.5px] text-muted">{personMeta(target.person)}</p>
-                  <p className="m-0 mt-3 mb-4 text-[15px] leading-[1.45]">{target.reason}</p>
-
-                  {done ? (
-                    <p className="m-0 text-[15px] font-bold text-acc-ink">Met ✓</p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => mark.mutate({ id: target.id, status: 'met' })}
-                        disabled={mark.isPending}
-                        className="rx-btn w-full min-h-[46px] rounded-[13px] border-[1.5px] border-edge-strong bg-white text-[15px] hover:border-acc hover:bg-acc hover:text-on-acc"
-                      >
-                        We met
-                      </button>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openProfile(target.person.id)}
-                          className="flex-1 cursor-pointer border-none bg-transparent text-[14px] font-bold text-acc-ink"
-                        >
-                          Profile
-                        </button>
-                        {!skipped && (
-                          <button
-                            onClick={() => mark.mutate({ id: target.id, status: 'skipped' })}
-                            className="flex-1 cursor-pointer border-none bg-transparent text-[14px] font-semibold text-faint"
-                          >
-                            Skip
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </article>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={() => regenerate.mutate()}
-            disabled={regenerate.isPending}
-            className="rx-link relative mt-6"
-          >
-            {regenerate.isPending ? 'Finding five more…' : 'Give me five different people →'}
-          </button>
-        </div>
-      )}
 
       {editing && profile && (
         <FormModal
@@ -337,6 +188,7 @@ function ProfileCompletion({ profile }) {
     { done: (profile.can_talk_about ?? []).length > 0, missing: 'something you can talk about' },
     { done: (profile.want_to_learn ?? []).length > 0, missing: 'something you want to learn' },
     { done: (profile.interests ?? []).length > 0, missing: 'an interest or group' },
+    { done: (profile.currently ?? []).length > 0, missing: "what you're currently into" },
     { done: Boolean((profile.intro ?? '').trim()), missing: 'a line about yourself' },
   ]
   const missing = checks.filter((c) => !c.done)

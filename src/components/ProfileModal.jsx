@@ -106,7 +106,9 @@ export default function ProfileModal({ userId, onClose, zIndex }) {
             <TagRow label="Want to learn" tags={person.want_to_learn} variant="rx-chip-outline" />
           </div>
 
-          {(person.can_help_with?.length > 0 || person.interests?.length > 0) && (
+          {(person.can_help_with?.length > 0 ||
+            person.interests?.length > 0 ||
+            person.currently?.length > 0) && (
             <div className="mt-[30px] rounded-tile bg-cream p-[26px]">
               {person.can_help_with?.length > 0 && (
                 <>
@@ -133,6 +135,19 @@ export default function ProfileModal({ userId, onClose, zIndex }) {
                       </span>
                     ))}
                   </div>
+                </>
+              )}
+              {person.currently?.length > 0 && (
+                <>
+                  <p className="rx-eyebrow m-0 mt-[26px] mb-[14px]">Currently into</p>
+                  <ul className="m-0 list-none p-0">
+                    {person.currently.map((entry, index) => (
+                      <li key={`${entry.label}-${index}`} className="m-0 mb-2.5 text-[16.5px] leading-[1.4] last:mb-0">
+                        <span className="mr-2">{entry.icon}</span>
+                        <strong className="font-bold">{entry.label}:</strong> {entry.value}
+                      </li>
+                    ))}
+                  </ul>
                 </>
               )}
             </div>

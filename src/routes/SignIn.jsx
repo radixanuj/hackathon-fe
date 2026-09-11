@@ -121,13 +121,15 @@ export default function SignIn() {
     >
       <Texture />
 
-      {/* Left: the pitch. */}
-      <div className="relative hidden overflow-hidden bg-acc p-[clamp(34px,5vw,68px)] text-on-acc md:flex md:flex-col md:justify-between md:gap-10">
+      {/* Left: the pitch. Full height on its own row when the grid stacks, so
+          the promise lands before the form rather than being dropped. */}
+      <div className="relative flex min-h-screen flex-col justify-between gap-10 overflow-hidden bg-acc p-[clamp(34px,5vw,68px)] text-on-acc">
         <div className="absolute top-[-90px] right-[-120px] h-[380px] w-[380px] rounded-full border-2 border-current opacity-[.26]" style={{ animation: 'floatC 17s ease-in-out infinite' }} />
         <div className="absolute bottom-[-120px] left-[-90px] h-[300px] w-[300px] rounded-full bg-white/[.12]" style={{ animation: 'floatB 14s ease-in-out infinite' }} />
 
-        {/* Ink-on-accent would swallow half the mark, so it goes flat here. */}
-        <Logo size={25} tone="mono" className="relative self-start text-on-acc" />
+        {/* Ink-on-accent would swallow half the mark, so it goes flat here.
+            The canvas sets this one larger than the header's. */}
+        <Logo size={34} tone="mono" className="relative self-start text-on-acc" />
 
         <div className="relative max-w-[560px]">
           <p className="m-0 mb-4 text-[15px] font-bold tracking-[.16em] uppercase opacity-[.82]">

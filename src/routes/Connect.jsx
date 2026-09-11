@@ -80,10 +80,6 @@ export default function Connect() {
     }
   }, [mentors, coaches])
 
-  // The pages are capped at 100; `total` is what the roster actually holds.
-  const mentorCount = mentors?.meta?.total ?? mentors?.items?.length ?? 0
-  const coachCount = coaches?.meta?.total ?? coaches?.items?.length ?? 0
-
   return (
     <section className="animate-rise pt-11">
       <h1 className="rx-display m-0 mb-3.5 text-[clamp(34px,5vw,64px)]">Pick a Brain</h1>
@@ -116,8 +112,8 @@ export default function Connect() {
 
       {active === 'meetup' && <MeetupPanel />}
       {active === 'knowledge' && <KnowledgePanel topic={topic} setTopic={setTopic} />}
-      {active === 'mentoring' && <MentoringPanel people={mentorChips} total={mentorCount} />}
-      {active === 'coaching' && <CoachingPanel people={coachChips} total={coachCount} />}
+      {active === 'mentoring' && <MentoringPanel people={mentorChips} />}
+      {active === 'coaching' && <CoachingPanel people={coachChips} />}
 
       <SessionsPanel />
     </section>
@@ -235,7 +231,9 @@ function MeetupPanel() {
   const pair = round?.my_pair
   const signedUp = Boolean(round?.my_signup) && round.my_signup.status !== 'withdrawn'
   const showReveal = revealed && pair?.partner
-  const facePile = round?.recent_signups ?? []
+  // Four faces, then the canvas's "+N" disc for everyone the row can't show.
+  const faces = (round?.recent_signups ?? []).slice(0, 4)
+  const overflow = (round?.signups_count ?? 0) - faces.length
 
   const closeReveal = () =>
     setSearchParams((current) => {
@@ -282,7 +280,16 @@ function MeetupPanel() {
 
         <div className="relative mt-[30px] flex flex-wrap items-center justify-between gap-[22px] border-t border-acc-soft pt-[26px]">
           <div className="flex flex-wrap items-center gap-3">
-            {facePile.length > 0 && <AvatarStack people={facePile.slice(0, 4)} size={44} />}
+            {faces.length > 0 && (
+              <div className="flex items-center">
+                <AvatarStack people={faces} size={44} />
+                {overflow > 0 && (
+                  <span className="-ml-[9px] grid h-11 w-11 place-items-center rounded-full border-[2.5px] border-white bg-white text-[15px] font-bold text-ink">
+                    +{overflow}
+                  </span>
+                )}
+              </div>
+            )}
             {round?.signups_count > 0 && (
               <span className="text-[18px] font-semibold text-muted">
                 {round.signups_count} already in for {periodLabel(round.period)}
@@ -297,7 +304,9 @@ function MeetupPanel() {
               <div className="flex animate-spring flex-wrap items-center gap-3.5 rounded-[18px] border border-acc-soft bg-white p-[16px_20px] text-ink">
                 <Avatar person={pair.partner} size={46} radius={14} />
                 <div className="min-w-0">
-                  <p className="rx-eyebrow m-0">You're in for {periodLabel(round.period)}</p>
+                  <p className="m-0 text-[14px] font-bold tracking-[.1em] text-muted uppercase">
+                    You're in for {periodLabel(round.period)}
+                  </p>
                   <p className="rx-title m-0 mt-0.5 text-[20px]">Matched with {pair.partner.name}</p>
                 </div>
                 <button
@@ -419,7 +428,7 @@ const COACHING_STEPS = [
   },
 ]
 
-function MentoringPanel({ people, total }) {
+function MentoringPanel({ people }) {
   const { openRequest, openPeople } = useOverlays()
 
   const browse = () =>
@@ -434,7 +443,7 @@ function MentoringPanel({ people, total }) {
 
   return (
     <Panel>
-      <PanelHead eyebrow="Sixty minutes" title="Learn from someone who's been there, done that">
+      <PanelHead eyebrow="Sixty Minutes" title="Learn from someone who's been there, done that">
         Monthly conversations about your work, your decisions and where you want to go next. Matched
         on discipline, not org chart.
       </PanelHead>
@@ -448,24 +457,19 @@ function MentoringPanel({ people, total }) {
         onPick={(person) => openRequest(person, 'Career direction', { kind: 'mentoring' })}
       />
 
-      <div className="relative mt-[26px] flex flex-wrap items-center gap-4">
+      <div className="relative mt-[26px]">
         <button
           onClick={browse}
           className="rx-btn rx-btn-dark min-h-[54px] rounded-[15px] px-7 py-4 text-[19px]"
         >
           Ask for a mentor
         </button>
-        {total > people.length && (
-          <button onClick={browse} className="rx-link">
-            See all {total} mentors →
-          </button>
-        )}
       </div>
     </Panel>
   )
 }
 
-function CoachingPanel({ people, total }) {
+function CoachingPanel({ people }) {
   const { openRequest, openPeople } = useOverlays()
 
   const browse = () =>
@@ -479,7 +483,7 @@ function CoachingPanel({ people, total }) {
 
   return (
     <Panel>
-      <PanelHead eyebrow="Sixty minutes" title="Work through something specific">
+      <PanelHead eyebrow="Sixty Minutes" title="Work through something specific">
         A handful of focused sessions on one thing: leading a team, speaking up in rooms, managing
         your time. You set the goal.
       </PanelHead>
@@ -493,18 +497,13 @@ function CoachingPanel({ people, total }) {
         onPick={(person) => openRequest(person, 'Leading a team', { kind: 'coaching' })}
       />
 
-      <div className="relative mt-[26px] flex flex-wrap items-center gap-4">
+      <div className="relative mt-[26px]">
         <button
           onClick={browse}
           className="rx-btn rx-btn-dark min-h-[54px] rounded-[15px] px-7 py-4 text-[19px]"
         >
           Set up coaching
         </button>
-        {total > people.length && (
-          <button onClick={browse} className="rx-link">
-            See all {total} coaches →
-          </button>
-        )}
       </div>
     </Panel>
   )
