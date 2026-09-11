@@ -17,5 +17,13 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Each provider sits next to the hook that reads it. That costs fast
+      // refresh on those four files and buys a much less fiddly import graph.
+      'react-refresh/only-export-components': [
+        'error',
+        { allowExportNames: ['useAuth', 'useTheme', 'useToast', 'useOverlays'] },
+      ],
+    },
   },
 ])

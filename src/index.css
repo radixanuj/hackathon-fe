@@ -1,111 +1,189 @@
+@import 'tailwindcss';
+
+/*
+  Design tokens lifted from the Radix Connect canvas.
+
+  The accent is a runtime "colour of the day" - ThemeProvider rewrites --acc
+  and friends on <html>, so every accent utility below resolves through them
+  and the whole app re-tints without a re-render.
+*/
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --acc: #1b3fe3;
+  --on-acc: #ffffff;
+  --tint: #edf1ff;
+  --acc-ink: #1b3fe3;
+  --acc-soft: #c9d5ff;
+  --inv: #ffffff;
+  --on-inv: #1b3fe3;
+}
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@theme {
+  --font-sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', Georgia, serif;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-ink: #14120f;
+  --color-muted: #6e6a62;
+  --color-faint: #9a948a;
+  --color-dim: #b9b4ab;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-cream: #faf8f4;
+  --color-sand: #f7f4ef;
+  --color-line: #f1ede6;
+  --color-edge: #ece8e1;
+  --color-edge-strong: #e3ded5;
+  --color-edge-soft: #ebe6de;
+  --color-edge-hover: #dfd9cf;
+
+  --color-acc: var(--acc);
+  --color-on-acc: var(--on-acc);
+  --color-tint: var(--tint);
+  --color-acc-ink: var(--acc-ink);
+  --color-acc-soft: var(--acc-soft);
+  --color-inv: var(--inv);
+  --color-on-inv: var(--on-inv);
+
+  --radius-card: 26px;
+  --radius-tile: 24px;
+  --radius-panel: 30px;
+  --radius-ctl: 15px;
+
+  --animate-rise: rise 0.6s both;
+  --animate-fade: fade 0.3s both;
+  --animate-pop: pop 0.45s cubic-bezier(0.2, 1.5, 0.3, 1) both;
+  --animate-spring: springIn 0.65s cubic-bezier(0.2, 1.3, 0.3, 1) both;
+  --animate-tada: tada 0.6s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+  --animate-bump: bumpUp 0.3s both;
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(22px) } to { opacity: 1; transform: none } }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes springIn {
+  0% { opacity: 0; transform: scale(0.92) translateY(28px) }
+  62% { opacity: 1; transform: scale(1.015) translateY(-6px) }
+  100% { opacity: 1; transform: none }
+}
+@keyframes floatA { 0%, 100% { transform: translateY(0) rotate(-3deg) } 50% { transform: translateY(-16px) rotate(2deg) } }
+@keyframes floatB { 0%, 100% { transform: translateY(-10px) rotate(4deg) } 50% { transform: translateY(10px) rotate(-2deg) } }
+@keyframes floatC { 0%, 100% { transform: translate(0, 0) } 50% { transform: translate(10px, -12px) } }
+@keyframes driftL { 0%, 100% { transform: translateX(-10px) rotate(-7deg) } 50% { transform: translateX(-30px) rotate(-11deg) } }
+@keyframes driftR { 0%, 100% { transform: translateX(10px) rotate(7deg) } 50% { transform: translateX(30px) rotate(11deg) } }
+@keyframes joinL { 0% { transform: translateX(-150px) rotate(-12deg); opacity: 0.35 } 100% { transform: translateX(-26px) rotate(-5deg); opacity: 1 } }
+@keyframes joinR { 0% { transform: translateX(150px) rotate(12deg); opacity: 0.35 } 100% { transform: translateX(26px) rotate(5deg); opacity: 1 } }
+@keyframes pop { 0% { transform: scale(0) } 68% { transform: scale(1.22) } 100% { transform: scale(1) } }
+@keyframes burst { 0% { transform: translate(0, 0) scale(1); opacity: 1 } 100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0 } }
+@keyframes ring { 0% { opacity: 0.7; transform: scale(0.75) } 100% { opacity: 0; transform: scale(1.7) } }
+@keyframes sweep { 0% { transform: translateX(-60%) } 100% { transform: translateX(160%) } }
+@keyframes bumpUp { 0% { transform: translateY(8px); opacity: 0 } 100% { transform: translateY(0); opacity: 1 } }
+@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0) } 25% { transform: rotate(-10deg) } 75% { transform: rotate(10deg) } }
+@keyframes tada { 0% { transform: scale(0.86) rotate(-5deg); opacity: 0 } 45% { transform: scale(1.08) rotate(3deg); opacity: 1 } 100% { transform: none; opacity: 1 } }
+@keyframes shuffleA { 0%, 100% { transform: translate(0, 0) rotate(-7deg) } 50% { transform: translate(30px, -12px) rotate(9deg) } }
+@keyframes shuffleB { 0%, 100% { transform: translate(0, 0) rotate(6deg) } 50% { transform: translate(-28px, 14px) rotate(-8deg) } }
+@keyframes shuffleC { 0%, 100% { transform: translate(0, 0) rotate(0) } 50% { transform: translate(6px, -18px) rotate(11deg) } }
+
+@layer base {
+  html, body { margin: 0; padding: 0; background: #fff }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
   }
+  ::selection { background: var(--acc-soft) }
+  button { font-family: inherit }
+  input, textarea { font-family: inherit }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  /* --- Type ------------------------------------------------------------ */
+  .rx-display { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.035em; line-height: 1 }
+  .rx-title { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.026em; line-height: 1.08 }
+  .rx-eyebrow {
+    font-size: 12.5px; font-weight: 700; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--color-faint);
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  /* --- Buttons --------------------------------------------------------- */
+  .rx-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: none; border-radius: 14px; padding: 13px 20px;
+    font-size: 15.5px; font-weight: 700; cursor: pointer; min-height: 48px;
+    transition: transform 0.22s cubic-bezier(0.2, 1.4, 0.3, 1), box-shadow 0.25s,
+      border-color 0.2s, background 0.2s, color 0.2s;
   }
-}
+  .rx-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none }
+  .rx-btn-lg { border-radius: var(--radius-ctl); padding: 16px 26px; font-size: 16.5px; min-height: 52px }
 
-body {
-  margin: 0;
-}
+  .rx-btn-acc { background: var(--acc); color: var(--on-acc) }
+  .rx-btn-acc:hover:not(:disabled) { transform: scale(1.04) }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
+  .rx-btn-ghost { background: #fff; color: var(--color-ink); border: 1.5px solid var(--color-edge-strong) }
+  .rx-btn-ghost:hover:not(:disabled) { border-color: var(--color-ink); transform: translateY(-2px) }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
+  .rx-btn-dark { background: var(--color-ink); color: #fff }
+  .rx-btn-dark:hover:not(:disabled) { transform: translateY(-3px) }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  .rx-btn-inv { background: var(--inv); color: var(--on-inv) }
+  .rx-btn-inv:hover:not(:disabled) { transform: scale(1.04) }
+
+  .rx-link { background: none; border: none; padding: 0; font-size: 15.5px; font-weight: 700; color: var(--acc-ink); cursor: pointer }
+
+  /* --- Cards ----------------------------------------------------------- */
+  .rx-card {
+    background: #fff; border: 1px solid var(--color-edge); border-radius: var(--radius-card);
+    min-width: 0;
+    transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.35s, border-color 0.35s;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  .rx-card-lift:hover { transform: translateY(-6px); box-shadow: 0 20px 44px rgb(20 18 15 / 0.09); border-color: var(--color-edge-hover) }
+  .rx-card-soft { background: var(--color-cream); border: 1px solid var(--color-line); border-radius: var(--radius-card); min-width: 0 }
+  .rx-card-dark { background: var(--color-ink); color: #fff; border-radius: var(--radius-card); min-width: 0 }
+
+  /* --- Chips ----------------------------------------------------------- */
+  .rx-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 999px; padding: 9px 15px; font-size: 15px; font-weight: 600; border: none;
   }
-}
-p {
-  margin: 0;
-}
+  .rx-chip-tint { background: var(--tint); color: var(--acc-ink) }
+  .rx-chip-sand { background: var(--color-sand); color: var(--color-ink) }
+  .rx-chip-outline { background: #fff; border: 1.5px solid var(--color-edge-soft); color: var(--color-ink) }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+  /* A chip that toggles a filter. */
+  .rx-pill {
+    border-radius: 999px; padding: 10px 17px; font-size: 14.5px; font-weight: 600;
+    border: none; cursor: pointer; background: var(--color-sand); color: var(--color-ink);
+    transition: transform 0.22s cubic-bezier(0.2, 1.4, 0.3, 1), background 0.2s;
+  }
+  .rx-pill:hover { transform: translateY(-2px); background: var(--tint) }
+  .rx-pill-on { background: var(--acc); color: var(--on-acc); font-weight: 700; animation: var(--animate-pop) }
+  .rx-pill-on:hover { background: var(--acc) }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  .rx-group {
+    border-radius: 999px; padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+    background: #fff; color: var(--color-muted); border: 1.5px solid var(--color-edge-soft);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .rx-group:hover { border-color: var(--color-ink); color: var(--color-ink) }
+  .rx-group-on { background: var(--color-ink); color: #fff; border-color: var(--color-ink); font-weight: 700 }
+  .rx-group-on:hover { color: #fff }
+
+  /* --- Fields ---------------------------------------------------------- */
+  .rx-input, .rx-textarea {
+    width: 100%; border: 1.5px solid var(--color-edge-strong); border-radius: 16px;
+    padding: 15px 16px; font-size: 16.5px; outline: none; color: var(--color-ink); background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .rx-input:focus, .rx-textarea:focus { border-color: var(--acc); box-shadow: 0 0 0 4px var(--tint) }
+  .rx-textarea { min-height: 92px; resize: vertical }
+  .rx-label { margin: 0 0 8px; font-size: 15.5px; font-weight: 700 }
+
+  /* --- Overlays -------------------------------------------------------- */
+  .rx-backdrop {
+    position: fixed; inset: 0; z-index: 110; background: rgb(20 18 15 / 0.4);
+    backdrop-filter: blur(6px); display: flex; justify-content: center; align-items: flex-start;
+    padding: 22px; overflow: auto; animation: var(--animate-fade);
+  }
+  .rx-sheet {
+    width: 100%; background: #fff; border-radius: var(--radius-panel);
+    padding: clamp(24px, 3.2vw, 40px); margin: auto;
+    animation: var(--animate-spring); box-shadow: 0 40px 90px rgb(20 18 15 / 0.3);
+  }
 }
