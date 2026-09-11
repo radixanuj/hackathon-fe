@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom'
  * `position: fixed`, which pins the backdrop to the page column instead of the
  * viewport and leaves a tall sheet stranded off-screen with nothing to scroll.
  */
-export default function Modal({ onClose, maxWidth = 760, children, zIndex = 110, showClose = true }) {
+export default function Modal({ onClose, maxWidth = 760, children, zIndex, showClose = true }) {
   useEffect(() => {
     const onKey = (event) => event.key === 'Escape' && onClose?.()
     document.addEventListener('keydown', onKey)
@@ -23,7 +23,7 @@ export default function Modal({ onClose, maxWidth = 760, children, zIndex = 110,
   }, [onClose])
 
   return createPortal(
-    <div className="rx-backdrop" style={{ zIndex }} onClick={onClose} role="presentation">
+    <div className="rx-backdrop" style={{ zIndex: zIndex ?? 110 }} onClick={onClose} role="presentation">
       <div
         className="rx-sheet"
         style={{ maxWidth }}

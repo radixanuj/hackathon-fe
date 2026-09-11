@@ -4,6 +4,7 @@ import { createAma, listAmas } from '../../api/amas'
 import { getMeta } from '../../api/meta'
 import { createRecommendation, like, listRecommendations, unlike } from '../../api/recommendations'
 import AmaModal from '../../components/AmaModal'
+import FeaturedBanner, { BannerGhost, BannerPrimary } from '../../components/FeaturedBanner'
 import FormModal from '../../components/FormModal'
 import { Empty, ErrorNote, SkeletonCards } from '../../components/States'
 import { useToast } from '../../components/Toast'
@@ -40,10 +41,14 @@ export default function LearnTab() {
     return Array.from(seen.entries()).map(([label, count]) => ({ label, count }))
   }, [recs])
 
-  const filtered = useMemo(() => {
+  // The shelf, plus the one thing we lead with. The lead is whatever sits first
+  // in the list you are actually looking at, so it follows the stream toggle and
+  // the kind chips. Below two items a banner is just a bigger card, so we skip it.
+  const { lead, rest, count } = useMemo(() => {
     const items = recs?.items ?? []
-    if (kind === 'All') return items
-    return items.filter((rec) => titleCase(rec.type) === kind)
+    const list = kind === 'All' ? items : items.filter((rec) => titleCase(rec.type) === kind)
+    if (list.length < 2) return { lead: null, rest: list, count: list.length }
+    return { lead: list[0], rest: list.slice(1), count: list.length }
   }, [recs, kind])
 
   const { data: amas, isPending: amasPending } = useQuery({
@@ -114,45 +119,67 @@ export default function LearnTab() {
       <div className="mt-[22px]">
         {recsPending ? (
           <SkeletonCards count={4} height={230} />
-        ) : filtered.length === 0 ? (
+        ) : count === 0 ? (
           <Empty title="Nothing recommended yet." hint="Be the first to put something on the shelf." />
         ) : (
-          <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
-            {filtered.map((rec) => (
-              <article key={rec.id} className="rx-card rx-card-lift animate-rise rounded-tile p-6">
-                <div className="flex items-start gap-[14px]">
-                  <span
-                    className="h-[70px] w-[52px] flex-none rounded-[9px]"
-                    style={{ background: spine(rec.id) }}
-                  />
-                  <div className="min-w-0">
-                    <p className="rx-eyebrow m-0 mb-[5px]">{titleCase(rec.type)}</p>
-                    <h3 className="rx-title m-0 text-[21px] leading-[1.14]">{rec.title}</h3>
-                    {rec.creator && <p className="m-0 mt-1 text-[14.5px] text-muted">{rec.creator}</p>}
+          <>
+            {lead && (
+              <FeaturedBanner
+                eyebrow="Most passed around"
+                title={lead.title}
+                meta={lead.why}
+                note={lead.creator ? `${titleCase(lead.type)} · ${lead.creator}` : titleCase(lead.type)}
+                stack={lead.user ? [lead.user] : []}
+                stackLine={`Recommended by ${lead.user?.name ?? 'someone here'}`}
+              >
+                <BannerPrimary onClick={() => toggleLike.mutate({ id: lead.id, liked: lead.is_liked })}>
+                  ♥ {lead.is_liked ? 'Loved' : 'Love this'} · {lead.likes_count ?? 0}
+                </BannerPrimary>
+                {lead.url && (
+                  <BannerGhost as="a" href={lead.url} target="_blank" rel="noreferrer">
+                    Open →
+                  </BannerGhost>
+                )}
+                <BannerGhost onClick={() => setCreatingRec(true)}>Add yours</BannerGhost>
+              </FeaturedBanner>
+            )}
+            <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
+              {rest.map((rec) => (
+                <article key={rec.id} className="rx-card rx-card-lift animate-rise rounded-tile p-6">
+                  <div className="flex items-start gap-[14px]">
+                    <span
+                      className="h-[70px] w-[52px] flex-none rounded-[9px]"
+                      style={{ background: spine(rec.id) }}
+                    />
+                    <div className="min-w-0">
+                      <p className="rx-eyebrow m-0 mb-[5px]">{titleCase(rec.type)}</p>
+                      <h3 className="rx-title m-0 text-[21px] leading-[1.14]">{rec.title}</h3>
+                      {rec.creator && <p className="m-0 mt-1 text-[14.5px] text-muted">{rec.creator}</p>}
+                    </div>
                   </div>
-                </div>
-                <p className="m-0 mt-[18px] mb-[14px] text-base leading-[1.5]">{rec.why}</p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="m-0 text-[14.5px] font-bold text-acc-ink">
-                    Recommended by {rec.user?.name ?? 'someone here'}
-                  </p>
-                  <button
-                    onClick={() => toggleLike.mutate({ id: rec.id, liked: rec.is_liked })}
-                    className={`ml-auto cursor-pointer rounded-full border-none px-[15px] py-2 text-[15px] font-bold transition-transform duration-200 ease-[cubic-bezier(.2,1.6,.3,1)] hover:scale-110 ${
-                      rec.is_liked ? 'bg-tint text-acc-ink' : 'bg-sand text-ink'
-                    }`}
-                  >
-                    ♥ {rec.likes_count ?? 0}
-                  </button>
-                  {rec.url && (
-                    <a href={rec.url} target="_blank" rel="noreferrer" className="rx-link no-underline">
-                      Open →
-                    </a>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+                  <p className="m-0 mt-[18px] mb-[14px] text-base leading-[1.5]">{rec.why}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="m-0 text-[14.5px] font-bold text-acc-ink">
+                      Recommended by {rec.user?.name ?? 'someone here'}
+                    </p>
+                    <button
+                      onClick={() => toggleLike.mutate({ id: rec.id, liked: rec.is_liked })}
+                      className={`ml-auto cursor-pointer rounded-full border-none px-[15px] py-2 text-[15px] font-bold transition-transform duration-200 ease-[cubic-bezier(.2,1.6,.3,1)] hover:scale-110 ${
+                        rec.is_liked ? 'bg-tint text-acc-ink' : 'bg-sand text-ink'
+                      }`}
+                    >
+                      ♥ {rec.likes_count ?? 0}
+                    </button>
+                    {rec.url && (
+                      <a href={rec.url} target="_blank" rel="noreferrer" className="rx-link no-underline">
+                        Open →
+                      </a>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

@@ -5,6 +5,7 @@ import NotificationBell from './NotificationBell'
 import Texture from './Texture'
 
 const NAV = [
+  { to: '/', label: 'Home' },
   { to: '/people', label: "Who's Who" },
   { to: '/connect', label: 'Pick a Brain' },
   { to: '/community', label: 'Find Your Crowd' },
@@ -30,9 +31,19 @@ export default function AppShell({ children }) {
             <Logo size={25} />
           </button>
 
+          {/* The sign-in line, carried into the shell so the mark keeps its
+              promise on every page. Dropped on narrow screens, where the nav
+              already wraps and has first claim on the row. */}
+          <span className="hidden flex-none items-center gap-[14px] md:flex">
+            <span className="h-[22px] w-px flex-none bg-edge-strong" />
+            <span className="font-display text-[15.5px] font-extrabold tracking-[-.015em] text-ink">
+              Built by Radicals, for Radicals
+            </span>
+          </span>
+
           <nav className="ml-auto flex flex-wrap gap-[2px]">
             {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} className="relative">
+              <NavLink key={item.to} to={item.to} end={item.to === '/'} className="relative">
                 {({ isActive }) => (
                   <span className="relative block cursor-pointer rounded-xl px-[15px] pt-[10px] pb-[13px] text-[15.5px] transition-colors hover:bg-sand">
                     <span className={isActive ? 'font-bold text-acc-ink' : 'font-semibold text-muted'}>

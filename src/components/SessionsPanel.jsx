@@ -8,6 +8,13 @@ import TimeSlots from './TimeSlots'
 import { buildSlots } from '../lib/slots'
 import { useToast } from './Toast'
 
+/** How each kind of ask reads back in a list. */
+const KIND_LABEL = {
+  knowledge: 'Knowledge session',
+  mentoring: 'Mentoring',
+  coaching: 'Coaching',
+}
+
 const STATUS_TONE = {
   pending: 'rx-chip-sand',
   accepted: 'rx-chip-tint',
@@ -24,19 +31,27 @@ function when(value) {
   })
 }
 
-/** Incoming and outgoing 30-minute asks, with the recipient's three replies. */
+const KINDS = [
+  [null, 'Everything'],
+  ['knowledge', 'Knowledge'],
+  ['mentoring', 'Mentoring'],
+  ['coaching', 'Coaching'],
+]
+
+/** Incoming and outgoing asks of all three kinds, with the recipient's three replies. */
 export default function SessionsPanel() {
   const queryClient = useQueryClient()
   const say = useToast()
   const [direction, setDirection] = useState('incoming')
+  const [kind, setKind] = useState(null)
   // Accepting or suggesting a time both require a `scheduled_at`, and seeded
   // requests carry no proposed time — so the recipient picks one here.
   const slots = useMemo(() => buildSlots(), [])
   const [times, setTimes] = useState({})
 
   const { data, isPending, error } = useQuery({
-    queryKey: ['session-requests', { direction }],
-    queryFn: () => listRequests({ direction }),
+    queryKey: ['session-requests', { direction, kind }],
+    queryFn: () => listRequests({ direction, kind: kind ?? undefined }),
   })
 
   const invalidate = () => {
@@ -91,6 +106,18 @@ export default function SessionsPanel() {
         </div>
       </div>
 
+      <div className="mt-5 flex flex-wrap gap-[9px]">
+        {KINDS.map(([value, label]) => (
+          <button
+            key={label}
+            onClick={() => setKind(value)}
+            className={`rx-group ${kind === value ? 'rx-group-on' : ''}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <ErrorNote error={error} className="mt-6" />
       {isPending && <p className="pt-6 text-[16.5px] text-muted">Loading…</p>}
 
@@ -117,7 +144,10 @@ export default function SessionsPanel() {
                 <Avatar person={other} size={54} radius={16} />
                 <div className="min-w-0">
                   <h3 className="rx-title m-0 text-[20px]">{other?.name}</h3>
-                  <p className="m-0 mt-[2px] text-[14.5px] text-muted">{titleCase(request.category)}</p>
+                  <p className="m-0 mt-[2px] text-[14.5px] text-muted">
+                    {KIND_LABEL[request.kind] ?? 'Session'} · {titleCase(request.category)} ·{' '}
+                    {request.duration_minutes} min
+                  </p>
                 </div>
                 <span className={`rx-chip ${STATUS_TONE[request.status] ?? 'rx-chip-sand'} ml-auto px-3 py-1.5 text-[13px]`}>
                   {titleCase(request.status)}

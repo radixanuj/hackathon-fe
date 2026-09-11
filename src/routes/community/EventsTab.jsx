@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createEvent, listEvents, rsvp } from '../../api/events'
 import { getMeta } from '../../api/meta'
 import { AvatarStack } from '../../components/Avatar'
+import FeaturedBanner, { BannerDone, BannerGhost, BannerPrimary } from '../../components/FeaturedBanner'
 import FormModal from '../../components/FormModal'
 import { Empty, ErrorNote, SkeletonCards } from '../../components/States'
 import { useToast } from '../../components/Toast'
@@ -33,7 +34,17 @@ export default function EventsTab() {
     onError: (caught) => say(caught.message),
   })
 
-  const events = data?.items ?? []
+  // The next thing up gets the accent slab; everything else fills the grid.
+  // Only worth doing when we're looking forward and there is more than one.
+  const { total, lead, rest } = useMemo(() => {
+    const items = data?.items ?? []
+    const featured = scope === 'upcoming' && items.length >= 2
+    return {
+      total: items.length,
+      lead: featured ? items[0] : null,
+      rest: featured ? items.slice(1) : items,
+    }
+  }, [data, scope])
 
   return (
     <div className="mt-8 animate-rise">
@@ -63,59 +74,84 @@ export default function EventsTab() {
       <div className="mt-[26px]">
         {isPending ? (
           <SkeletonCards count={6} height={280} />
-        ) : events.length === 0 ? (
+        ) : total === 0 ? (
           <Empty title="Nothing planned yet." hint="Be the person who suggests something." />
         ) : (
-          <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
-            {events.map((event) => (
-              <article key={event.id} className="rx-card rx-card-lift animate-rise rounded-tile p-[26px] hover:rotate-[.5deg]">
-                <span className="text-[34px] leading-none">{eventEmoji(event.category)}</span>
-                <h3 className="rx-title m-0 mt-4 text-2xl">{event.title}</h3>
-                <p className="m-0 mt-2 text-base text-muted">{eventWhen(event)}</p>
-                {event.host && <p className="m-0 mt-0.5 text-base text-muted">Hosted by {event.host.name}</p>}
-
-                <div className="my-5 flex items-center gap-3">
-                  <AvatarStack people={[event.host].filter(Boolean)} size={34} />
-                  <span className="text-[15px] text-muted">
-                    {event.going_count} joining
-                    {event.spots_left !== null && event.spots_left !== undefined
-                      ? ` · ${event.spots_left} spots left`
-                      : ''}
-                  </span>
-                </div>
-
-                {event.my_rsvp === 'going' ? (
-                  <div className="flex animate-pop items-center gap-[10px] rounded-[14px] bg-tint px-[18px] py-[13px] text-[15.5px] font-bold text-acc-ink">
-                    <span className="grid h-[22px] w-[22px] place-items-center rounded-full bg-acc text-[13px] text-on-acc">✓</span>
-                    You're in
-                    <button
-                      onClick={() => going.mutate({ id: event.id, status: 'not_going' })}
-                      className="ml-auto cursor-pointer border-none bg-transparent text-[14px] font-semibold text-muted underline"
-                    >
-                      Can't make it
-                    </button>
-                  </div>
+          <>
+            {lead && (
+              <FeaturedBanner
+                eyebrow="Next one up"
+                title={`${eventEmoji(lead.category)} ${lead.title}`}
+                meta={eventWhen(lead)}
+                note={lead.host ? `Hosted by ${lead.host.name}` : undefined}
+                stack={[lead.host].filter(Boolean)}
+                stackLine={`${lead.going_count} joining`}
+              >
+                {lead.my_rsvp === 'going' ? (
+                  <BannerDone>✓ You're in</BannerDone>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => going.mutate({ id: event.id, status: 'going' })}
-                      disabled={going.isPending || event.is_full || event.status === 'cancelled'}
-                      className="rx-btn rx-btn-acc flex-1 rounded-[14px]"
-                    >
-                      {event.is_full ? 'Full' : "I'm in"}
-                    </button>
-                    <button
-                      onClick={() => going.mutate({ id: event.id, status: 'maybe' })}
-                      disabled={going.isPending}
-                      className="rx-btn rx-btn-ghost rounded-[14px] px-4"
-                    >
-                      Maybe
-                    </button>
-                  </div>
+                  <BannerPrimary
+                    onClick={() => going.mutate({ id: lead.id, status: 'going' })}
+                    disabled={going.isPending || lead.is_full || lead.status === 'cancelled'}
+                  >
+                    {lead.is_full ? 'Full' : "I'm in"}
+                  </BannerPrimary>
                 )}
-              </article>
-            ))}
-          </div>
+                <BannerGhost onClick={() => setCreating(true)}>Create something</BannerGhost>
+              </FeaturedBanner>
+            )}
+
+            <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+              {rest.map((event) => (
+                <article key={event.id} className="rx-card rx-card-lift animate-rise rounded-tile p-[26px] hover:rotate-[.5deg]">
+                  <span className="text-[34px] leading-none">{eventEmoji(event.category)}</span>
+                  <h3 className="rx-title m-0 mt-4 text-2xl">{event.title}</h3>
+                  <p className="m-0 mt-2 text-base text-muted">{eventWhen(event)}</p>
+                  {event.host && <p className="m-0 mt-0.5 text-base text-muted">Hosted by {event.host.name}</p>}
+
+                  <div className="my-5 flex items-center gap-3">
+                    <AvatarStack people={[event.host].filter(Boolean)} size={34} />
+                    <span className="text-[15px] text-muted">
+                      {event.going_count} joining
+                      {event.spots_left !== null && event.spots_left !== undefined
+                        ? ` · ${event.spots_left} spots left`
+                        : ''}
+                    </span>
+                  </div>
+
+                  {event.my_rsvp === 'going' ? (
+                    <div className="flex animate-pop items-center gap-[10px] rounded-[14px] bg-tint px-[18px] py-[13px] text-[15.5px] font-bold text-acc-ink">
+                      <span className="grid h-[22px] w-[22px] place-items-center rounded-full bg-acc text-[13px] text-on-acc">✓</span>
+                      You're in
+                      <button
+                        onClick={() => going.mutate({ id: event.id, status: 'not_going' })}
+                        className="ml-auto cursor-pointer border-none bg-transparent text-[14px] font-semibold text-muted underline"
+                      >
+                        Can't make it
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => going.mutate({ id: event.id, status: 'going' })}
+                        disabled={going.isPending || event.is_full || event.status === 'cancelled'}
+                        className="rx-btn rx-btn-acc flex-1 rounded-[14px]"
+                      >
+                        {event.is_full ? 'Full' : "I'm in"}
+                      </button>
+                      <button
+                        onClick={() => going.mutate({ id: event.id, status: 'maybe' })}
+                        disabled={going.isPending}
+                        className="rx-btn rx-btn-ghost rounded-[14px] px-4"
+                      >
+                        Maybe
+                      </button>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

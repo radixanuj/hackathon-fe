@@ -107,17 +107,38 @@ export default function People() {
 
   return (
     <section className="animate-rise pt-[52px]">
-      <h1 className="rx-display m-0 max-w-[620px] text-[clamp(36px,5vw,58px)] text-pretty">
-        Find someone worth talking to
-      </h1>
-      <p className="m-0 mt-4 max-w-[640px] text-[18.5px] leading-[1.5] text-muted text-pretty">
-        There's more to your colleagues than a job title and a Zoom square. See what people know,
-        what they're into and what they want to learn — and find a reason to start a conversation.
-      </p>
+      {/* --- Hero panel ---------------------------------------------------- */}
+      <div className="relative overflow-hidden rounded-panel border border-line bg-cream p-[clamp(28px,3.6vw,44px)]">
+        <div
+          className="absolute top-[-90px] right-[-80px] h-[280px] w-[280px] rounded-full bg-tint"
+          style={{ animation: 'floatC 15s ease-in-out infinite' }}
+        />
+        <div
+          className="absolute right-[70px] bottom-[-60px] h-[130px] w-[130px] rounded-full bg-acc-soft opacity-50"
+          style={{ animation: 'floatA 11s ease-in-out infinite' }}
+        />
+        <div className="relative max-w-[680px]">
+          <p className="m-0 mb-4 text-[20px] leading-[1.2] font-bold tracking-[.16em] text-acc-ink uppercase">
+            Who's Who
+          </p>
+          <h1 className="rx-display m-0 text-[clamp(34px,5vw,64px)] leading-none tracking-[-.038em] text-pretty">
+            Meet the{' '}
+            <span className="relative inline-block text-acc-ink">
+              <span
+                className="absolute right-0 bottom-[.06em] left-0 h-[.18em] origin-left bg-acc-soft"
+                style={{ animation: 'drawUl .9s .3s cubic-bezier(.2,.9,.3,1) both' }}
+              />
+              <span className="relative">Radicals</span>
+            </span>
+            , know more about them.
+          </h1>
+          <p className="m-0 mt-[22px] max-w-[560px] text-[20px] leading-[1.5] text-muted text-pretty">
+            Search by a skill, interest, expertise or location
+          </p>
+        </div>
+      </div>
 
-      <SuggestionsStrip limit={3} />
-
-      <div className="relative mt-[30px] mb-6 max-w-[660px]">
+      <div className="relative my-6 max-w-[660px]">
         <input
           className="rx-input rounded-[18px] px-[22px] py-5 text-[18px]"
           placeholder="Search skills, interests, teams or people..."
@@ -213,6 +234,12 @@ export default function People() {
           ))}
         </div>
       )}
+
+      {/* Not in the canvas, but the suggestions feature lives here — parked
+          below the directory so the design's search-first hero stays intact. */}
+      <div className="mt-[72px] border-t border-line pt-[52px]">
+        <SuggestionsStrip limit={3} />
+      </div>
     </section>
   )
 }

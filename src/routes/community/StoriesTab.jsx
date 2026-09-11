@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getMeta } from '../../api/meta'
 import { convertToAma, createStory, discoverStories, listStories, react, removeReaction } from '../../api/stories'
 import Avatar from '../../components/Avatar'
+import FeaturedBanner, { BannerGhost, BannerPrimary } from '../../components/FeaturedBanner'
 import FormModal from '../../components/FormModal'
 import { useOverlays } from '../../components/Overlays'
 import { Empty, ErrorNote, SkeletonCards } from '../../components/States'
@@ -177,7 +178,26 @@ export default function StoriesTab() {
     onError: (caught) => say(caught.message),
   })
 
-  const stories = data?.items ?? []
+  // The newest story gets the accent slab; the rest fill the grid. Only worth
+  // doing when there is still a grid left behind it.
+  const { total, lead, rest } = useMemo(() => {
+    const items = data?.items ?? []
+    const featured = items.length >= 2
+    return {
+      total: items.length,
+      lead: featured ? items[0] : null,
+      rest: featured ? items.slice(1) : items,
+    }
+  }, [data])
+
+  // The slab stands in for the lead's card, so it has to carry what that card's
+  // chip row carried: the reaction you gave, and the count that sat beside it.
+  const leadReaction = REACTIONS.find((reaction) => reaction.key === lead?.my_reaction)
+  const leadCount = lead?.reactions_count ?? 0
+  const leadNote =
+    leadCount === 0
+      ? 'Nobody has reacted yet. Go on.'
+      : `${leadCount} ${leadCount === 1 ? 'person has' : 'people have'} reacted`
 
   return (
     <div className="mt-8 animate-rise">
@@ -217,7 +237,7 @@ export default function StoriesTab() {
       <div className="mt-[26px]">
         {isPending ? (
           <SkeletonCards count={3} height={420} />
-        ) : stories.length === 0 ? (
+        ) : total === 0 ? (
           <Empty
             title={mode === 'discover' ? 'Nothing matching your interests yet.' : 'No stories yet.'}
             hint={
@@ -227,66 +247,114 @@ export default function StoriesTab() {
             }
           />
         ) : (
-          <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
-            {stories.map((story) => (
-              <article key={story.id} className="rx-card rx-card-lift animate-rise overflow-hidden">
-                <div className="relative grid h-[230px] place-items-center bg-sand">
-                  {story.media_url ? (
-                    <img src={story.media_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-[64px] leading-none">{storyEmoji(story.category)}</span>
-                  )}
-                </div>
-                <div className="p-[26px]">
-                  <h3 className="rx-title m-0 text-[26px] font-extrabold tracking-[-.03em] leading-[1.05]">
-                    {story.title}
-                  </h3>
-                  {story.user && (
-                    <div className="mt-3 flex items-center gap-2.5">
-                      <Avatar person={story.user} size={32} radius={10} />
-                      <p className="m-0 text-[15.5px] font-bold text-acc-ink">
-                        {story.user.name} · {personMeta(story.user)}
-                      </p>
-                    </div>
-                  )}
-                  <p className="m-0 mt-3 mb-4 text-[16.5px] leading-[1.5] text-muted">{story.body}</p>
+          <>
+            {lead && (
+              <FeaturedBanner
+                eyebrow="Latest from after hrs"
+                title={`${storyEmoji(lead.category)} ${lead.title}`}
+                meta={lead.body}
+                note={leadNote}
+                stack={[lead.user].filter(Boolean)}
+                stackLine={lead.user ? `${lead.user.name} · ${personMeta(lead.user)}` : undefined}
+              >
+                {/*
+                  There is room for one reaction here rather than the whole chip
+                  row, so it holds the one you gave — tap again to take it back —
+                  and the clap until you do.
+                */}
+                <BannerPrimary
+                  onClick={() =>
+                    toggleReaction.mutate({
+                      id: lead.id,
+                      reaction: leadReaction?.key ?? 'clap',
+                      mine: lead.my_reaction,
+                    })
+                  }
+                  disabled={toggleReaction.isPending}
+                  title={leadReaction ? 'Take it back' : reactionLabel('clap')}
+                >
+                  {leadReaction ? `${leadReaction.emoji} You reacted` : '👏 Nice one'}
+                </BannerPrimary>
 
-                  {story.tags?.length > 0 && (
-                    <div className="mb-[18px] flex flex-wrap gap-[7px]">
-                      {story.tags.map((tag) => (
-                        <span key={tag.id} className="rx-chip rx-chip-sand px-[14px] py-2 text-[14px]">
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                {lead.user && lead.user.id !== user?.id && (
+                  <BannerGhost onClick={() => openRequest(lead.user, lead.title)}>Ask about it</BannerGhost>
+                )}
+                {lead.user?.id === user?.id && !lead.ama_id && (
+                  <BannerGhost onClick={() => toAma.mutate(lead.id)} disabled={toAma.isPending}>
+                    Turn into an AMA
+                  </BannerGhost>
+                )}
+              </FeaturedBanner>
+            )}
 
-                  <div className="flex flex-wrap items-center gap-[9px]">
-                    <Reactions story={story} onReact={toggleReaction.mutate} />
-                    <span className="text-[15px] text-muted">{story.reactions_count ?? 0}</span>
-
-                    {story.user && story.user.id !== user?.id && (
-                      <button
-                        onClick={() => openRequest(story.user, story.title)}
-                        className="rx-btn rx-btn-ghost ml-auto min-h-[44px] rounded-full px-5 text-base"
-                      >
-                        Ask about it
-                      </button>
-                    )}
-                    {story.user?.id === user?.id && !story.ama_id && (
-                      <button
-                        onClick={() => toAma.mutate(story.id)}
-                        disabled={toAma.isPending}
-                        className="rx-btn rx-btn-ghost ml-auto min-h-[44px] rounded-full px-5 text-base"
-                      >
-                        Turn into an AMA
-                      </button>
+            <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+              {rest.map((story) => (
+                <article key={story.id} className="rx-card rx-card-lift animate-rise overflow-hidden">
+                  {/* The photo is absolute so a portrait one crops to the strip
+                      rather than rendering at its own aspect ratio over the text:
+                      `h-full` has nothing to resolve against in a centred grid. */}
+                  <div className="relative grid h-[230px] place-items-center overflow-hidden bg-sand">
+                    {story.media_url ? (
+                      <img
+                        src={story.media_url}
+                        alt=""
+                        className="absolute inset-0 block h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[64px] leading-none">{storyEmoji(story.category)}</span>
                     )}
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="p-[26px]">
+                    <h3 className="rx-title m-0 text-[26px] font-extrabold tracking-[-.03em] leading-[1.05]">
+                      {story.title}
+                    </h3>
+                    {story.user && (
+                      <div className="mt-3 flex items-center gap-2.5">
+                        <Avatar person={story.user} size={32} radius={10} />
+                        <p className="m-0 text-[15.5px] font-bold text-acc-ink">
+                          {story.user.name} · {personMeta(story.user)}
+                        </p>
+                      </div>
+                    )}
+                    <p className="m-0 mt-3 mb-4 text-[16.5px] leading-[1.5] text-muted">{story.body}</p>
+
+                    {story.tags?.length > 0 && (
+                      <div className="mb-[18px] flex flex-wrap gap-[7px]">
+                        {story.tags.map((tag) => (
+                          <span key={tag.id} className="rx-chip rx-chip-sand px-[14px] py-2 text-[14px]">
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-[9px]">
+                      <Reactions story={story} onReact={toggleReaction.mutate} />
+                      <span className="text-[15px] text-muted">{story.reactions_count ?? 0}</span>
+
+                      {story.user && story.user.id !== user?.id && (
+                        <button
+                          onClick={() => openRequest(story.user, story.title)}
+                          className="rx-btn rx-btn-ghost ml-auto min-h-[44px] rounded-full px-5 text-base"
+                        >
+                          Ask about it
+                        </button>
+                      )}
+                      {story.user?.id === user?.id && !story.ama_id && (
+                        <button
+                          onClick={() => toAma.mutate(story.id)}
+                          disabled={toAma.isPending}
+                          className="rx-btn rx-btn-ghost ml-auto min-h-[44px] rounded-full px-5 text-base"
+                        >
+                          Turn into an AMA
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

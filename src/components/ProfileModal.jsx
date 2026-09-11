@@ -42,7 +42,7 @@ function TagRow({ label, tags, variant }) {
   )
 }
 
-export default function ProfileModal({ userId, onClose }) {
+export default function ProfileModal({ userId, onClose, zIndex }) {
   const { openRequest } = useOverlays()
 
   const { data: person, isPending, error } = useQuery({
@@ -59,7 +59,7 @@ export default function ProfileModal({ userId, onClose }) {
   const story = stories?.items?.[0]
 
   return (
-    <Modal onClose={onClose} maxWidth={760}>
+    <Modal onClose={onClose} maxWidth={760} zIndex={zIndex}>
       {isPending && <p className="py-8 text-[16.5px] text-muted">Loading profile…</p>}
       <ErrorNote error={error} />
 

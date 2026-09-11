@@ -12,7 +12,7 @@ import QuestComplete from '../components/QuestComplete'
 import { ErrorNote } from '../components/States'
 import TagEditor from '../components/TagEditor'
 import { useToast } from '../components/Toast'
-import { personMeta, tenureLabel } from '../lib/format'
+import { personMeta, personPhoto, tenureLabel } from '../lib/format'
 
 export default function Me() {
   const { user, setUser, signOut } = useAuth()
@@ -73,13 +73,33 @@ export default function Me() {
 
       {/* --- Header ------------------------------------------------------- */}
       <div className="flex flex-wrap items-center gap-[26px]">
-        <span className="grid h-28 w-28 flex-none place-items-center rounded-[30px] bg-acc font-display text-[40px] font-extrabold text-on-acc">
-          {(profile?.name ?? '?')
-            .split(/\s+/)
-            .slice(0, 2)
-            .map((part) => part[0])
-            .join('')
-            .toUpperCase()}
+        <span className="relative h-28 w-28 flex-none">
+          <span className="absolute inset-0 grid place-items-center overflow-hidden rounded-[30px] bg-acc font-display text-[40px] font-extrabold text-on-acc">
+            {(profile?.name ?? '?')
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((part) => part[0])
+              .join('')
+              .toUpperCase()}
+          </span>
+          {personPhoto(profile) && (
+            <img
+              src={personPhoto(profile)}
+              alt={profile?.name ?? ''}
+              className="absolute inset-0 h-full w-full rounded-[30px] object-cover"
+            />
+          )}
+          <button
+            onClick={() => setEditing(true)}
+            title="Change photo"
+            aria-label="Change photo"
+            className="absolute right-[-6px] bottom-[-6px] grid h-[38px] w-[38px] cursor-pointer place-items-center rounded-full border-[1.5px] border-edge bg-white shadow-[0_4px_12px_rgb(20_18_15_/_0.12)] transition-[transform,border-color] duration-200 ease-[cubic-bezier(.2,1.5,.3,1)] hover:scale-110 hover:border-ink"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14120F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
         </span>
         <div className="min-w-0">
           <h1 className="rx-display m-0 text-[clamp(32px,4.4vw,50px)]">{profile?.name}</h1>
@@ -114,12 +134,48 @@ export default function Me() {
       {profile && <ProfileCompletion profile={profile} />}
 
       {profile?.intro && (
-        <p className="mt-6 max-w-[640px] text-[18px] leading-[1.55]">{profile.intro}</p>
+        <div className="rx-card mt-[18px] min-w-0 animate-rise rounded-tile p-[26px]">
+          <p className="rx-eyebrow m-0 mb-4">About you</p>
+          <p className="m-0 max-w-[640px] text-[18px] leading-[1.55] text-pretty">{profile.intro}</p>
+        </div>
       )}
+
+      {/* --- Profile sections --------------------------------------------- */}
+      <div className="mt-[18px] grid gap-[18px] [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+        <TagEditor
+          label="You can talk about"
+          kind="can_talk_about"
+          tags={profile?.can_talk_about}
+          variant="rx-chip-tint"
+        />
+        <TagEditor
+          label="You can help with"
+          kind="can_help_with"
+          tags={profile?.can_help_with}
+          variant="rx-chip-tint"
+        />
+        <TagEditor label="You want to learn" kind="want_to_learn" tags={profile?.want_to_learn} />
+        <TagEditor label="Outside work" kind="interest" tags={profile?.interests} />
+
+        <div className="rx-card min-w-0 animate-rise rounded-tile p-[26px]">
+          <p className="rx-eyebrow m-0 mb-[14px]">Your groups</p>
+          {(groups?.items ?? []).length ? (
+            <div className="flex flex-wrap gap-2">
+              {groups.items.map((group) => (
+                <span key={group.id} className="rx-chip rx-chip-sand">
+                  {group.emoji} {group.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="m-0 text-[15px] text-faint">You haven't joined any yet.</p>
+          )}
+        </div>
+      </div>
 
       {/* --- New Joiner Quest --------------------------------------------- */}
       {targets.length > 0 && (
-        <div className="relative mt-11 animate-rise overflow-hidden rounded-panel bg-cream p-[clamp(26px,3.4vw,44px)]">
+        <div className="relative mt-[26px] animate-rise overflow-hidden rounded-panel bg-cream p-[clamp(26px,3.4vw,44px)]">
           <div className="absolute top-[-60px] right-[-60px] h-[220px] w-[220px] rounded-full bg-tint" style={{ animation: 'floatC 13s ease-in-out infinite' }} />
 
           <div className="relative flex flex-wrap items-end justify-between gap-[22px]">
@@ -128,7 +184,7 @@ export default function Me() {
                 New Joiner Quest
               </p>
               <h2 className="rx-display m-0 text-[clamp(30px,4vw,44px)] leading-[1.02]">
-                Your first Radix mission
+                Your first mission on IRL
               </h2>
               <p className="m-0 mt-[14px] text-[18.5px] leading-[1.45] text-muted">
                 Meet five people across Radix in your first month — deliberately across teams,
@@ -222,39 +278,6 @@ export default function Me() {
           </button>
         </div>
       )}
-
-      {/* --- Profile sections --------------------------------------------- */}
-      <div className="mt-[26px] grid gap-[18px] [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
-        <TagEditor
-          label="You can talk about"
-          kind="can_talk_about"
-          tags={profile?.can_talk_about}
-          variant="rx-chip-tint"
-        />
-        <TagEditor
-          label="You can help with"
-          kind="can_help_with"
-          tags={profile?.can_help_with}
-          variant="rx-chip-tint"
-        />
-        <TagEditor label="You want to learn" kind="want_to_learn" tags={profile?.want_to_learn} />
-        <TagEditor label="Outside work" kind="interest" tags={profile?.interests} />
-
-        <div className="rx-card min-w-0 animate-rise rounded-tile p-[26px]">
-          <p className="rx-eyebrow m-0 mb-[14px]">Your groups</p>
-          {(groups?.items ?? []).length ? (
-            <div className="flex flex-wrap gap-2">
-              {groups.items.map((group) => (
-                <span key={group.id} className="rx-chip rx-chip-sand">
-                  {group.emoji} {group.name}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="m-0 text-[15px] text-faint">You haven't joined any yet.</p>
-          )}
-        </div>
-      </div>
 
       {editing && profile && (
         <FormModal
