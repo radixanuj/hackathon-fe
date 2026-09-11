@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import AppShell from './components/AppShell'
 import { OverlayProvider } from './components/Overlays'
+import About from './routes/About'
 import Community from './routes/Community'
 import Connect from './routes/Connect'
 import Home from './routes/Home'
@@ -20,6 +21,7 @@ function Protected() {
           <Route path="/connect" element={<Connect />} />
           <Route path="/community" element={<Community />} />
           <Route path="/me" element={<Me />} />
+          <Route path="/about" element={<About />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

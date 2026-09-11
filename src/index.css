@@ -15,6 +15,10 @@
   --acc-soft: #c9d5ff;
   --inv: #ffffff;
   --on-inv: #1b3fe3;
+
+  /* The bright end of the logo gradient. Mixing toward the theme's own tint
+     lifts the accent without washing the hue out the way plain white does. */
+  --logo-lift: color-mix(in oklab, var(--acc) 86%, var(--tint));
 }
 
 @theme {
@@ -80,6 +84,14 @@
 @keyframes shuffleA { 0%, 100% { transform: translate(0, 0) rotate(-7deg) } 50% { transform: translate(30px, -12px) rotate(9deg) } }
 @keyframes shuffleB { 0%, 100% { transform: translate(0, 0) rotate(6deg) } 50% { transform: translate(-28px, 14px) rotate(-8deg) } }
 @keyframes shuffleC { 0%, 100% { transform: translate(0, 0) rotate(0) } 50% { transform: translate(6px, -18px) rotate(11deg) } }
+@keyframes boopPoke {
+  0% { transform: translateX(0) rotate(0) }
+  18% { transform: translateX(14px) rotate(3deg) }
+  34% { transform: translateX(-4px) rotate(-1deg) }
+  52% { transform: translateX(12px) rotate(2deg) }
+  70% { transform: translateX(0) rotate(0) }
+  100% { transform: translateX(0) rotate(0) }
+}
 
 @layer base {
   html, body { margin: 0; padding: 0; background: #fff }

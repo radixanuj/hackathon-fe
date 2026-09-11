@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { searchDirectory } from '../api/auth'
 import { useAuth } from '../auth/AuthContext'
 import Avatar from '../components/Avatar'
+import Logo from '../components/Logo'
 import { personMeta } from '../lib/format'
 
 /**
@@ -106,12 +107,8 @@ export default function SignIn() {
         <div className="absolute top-[-80px] right-[-80px] h-[320px] w-[320px] rounded-full border-2 border-current opacity-30" style={{ animation: 'floatC 14s ease-in-out infinite' }} />
         <div className="absolute right-[90px] bottom-[-120px] h-[240px] w-[240px] rounded-full bg-white/[.14]" />
 
-        <div className="flex items-center gap-[10px]">
-          <span className="block h-[26px] w-[26px] rounded-[9px] bg-inv" />
-          <span className="font-display text-[19px] font-extrabold tracking-[-.02em] text-on-acc">
-            Radix Connect
-          </span>
-        </div>
+        {/* Ink-on-accent would swallow half the mark, so it goes flat here. */}
+        <Logo size={25} tone="mono" className="relative text-on-acc" />
 
         <div className="relative mt-[18vh] max-w-[520px]">
           <h1 className="rx-display m-0 text-[clamp(36px,4.6vw,58px)] leading-[.99]">
@@ -122,7 +119,7 @@ export default function SignIn() {
             about eleven.
           </h1>
           <p className="m-0 mt-5 text-[19px] leading-[1.45] opacity-[.88]">
-            Radix Connect is for the other eighty-seven — the ones you'd never be put in a meeting with.
+            IRL is for the other eighty-seven — the ones you'd never be put in a meeting with.
           </p>
         </div>
 

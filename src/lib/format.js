@@ -18,6 +18,32 @@ export function avatarColor(seed) {
   return AVATARS[Math.abs(hash) % AVATARS.length]
 }
 
+/**
+ * People the design ships with a real photograph. Matched by first name so
+ * the roster's surnames ("Dass" vs "Sodhi") don't need to be kept in sync;
+ * duplicates in the directory would just share the picture, which is fine.
+ */
+const PHOTO_MAP = {
+  leonard: '/photos/leonard.png',
+  namrata: '/photos/namrata.png',
+  bhavesh: '/photos/bhavesh.png',
+  clifford: '/photos/clifford.png',
+  minita: '/photos/minita.png',
+  parag: '/photos/parag.png',
+  tanisha: '/photos/tanisha-hyrox.png',
+}
+
+export function personPhoto(person) {
+  if (!person) return null
+  if (person.avatar_url) return person.avatar_url
+  if (person.photo_url) return person.photo_url
+  const first = String(person.name ?? '').trim().split(/\s+/)[0]?.toLowerCase()
+  return first ? PHOTO_MAP[first] ?? null : null
+}
+
+/** Ordered list of first-name keys so the hero can render the design mosaic. */
+export const HERO_PHOTO_ORDER = ['leonard', 'namrata', 'bhavesh', 'clifford', 'minita']
+
 /** "Engineering · Mumbai" */
 export function personMeta(person) {
   return [person?.team, person?.location].filter(Boolean).join(' · ')
