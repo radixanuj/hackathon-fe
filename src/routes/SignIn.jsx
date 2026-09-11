@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { useTheme } from '../theme/ThemeProvider'
 
 /**
  * Demo sign-in: a name and one shared password. An unknown name creates a
@@ -9,7 +8,6 @@ import { useTheme } from '../theme/ThemeProvider'
  */
 export default function SignIn() {
   const { signIn } = useAuth()
-  const { shuffle } = useTheme()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -38,12 +36,12 @@ export default function SignIn() {
         <div className="absolute top-[-80px] right-[-80px] h-[320px] w-[320px] rounded-full border-2 border-current opacity-30" style={{ animation: 'floatC 14s ease-in-out infinite' }} />
         <div className="absolute right-[90px] bottom-[-120px] h-[240px] w-[240px] rounded-full bg-white/[.14]" />
 
-        <button onClick={shuffle} title="Shuffle the colour of the day" className="flex cursor-pointer items-center gap-[10px] border-none bg-transparent p-0">
+        <div className="flex items-center gap-[10px]">
           <span className="block h-[26px] w-[26px] rounded-[9px] bg-inv" />
           <span className="font-display text-[19px] font-extrabold tracking-[-.02em] text-on-acc">
             Radix Connect
           </span>
-        </button>
+        </div>
 
         <div className="relative mt-[18vh] max-w-[520px]">
           <h1 className="rx-display m-0 text-[clamp(36px,4.6vw,58px)] leading-[.99]">

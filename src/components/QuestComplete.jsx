@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 const CONFETTI = [
   { size: 10, dx: '-160px', dy: '-70px', delay: '.25s', color: 'var(--acc)' },
   { size: 8, dx: '150px', dy: '-90px', delay: '.3s', color: '#14120F' },
@@ -8,7 +10,7 @@ const CONFETTI = [
 
 /** The moment all five introductions are done. */
 export default function QuestComplete({ onClose, teams, locations }) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[150] grid animate-fade place-items-center bg-[rgb(20_18_15/0.45)] p-[22px] backdrop-blur-lg" onClick={onClose}>
       <div
         onClick={(event) => event.stopPropagation()}
@@ -42,6 +44,7 @@ export default function QuestComplete({ onClose, teams, locations }) {
           Nice
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,13 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useContext } from 'react'
 import { THEME_KEYS, THEMES } from './themes'
-
-const STORAGE_KEY = 'radix.theme'
 
 const ThemeContext = createContext(null)
 
-function randomKey(except) {
-  const pool = except ? THEME_KEYS.filter((key) => key !== except) : THEME_KEYS
-  return pool[Math.floor(Math.random() * pool.length)]
+function randomKey() {
+  return THEME_KEYS[Math.floor(Math.random() * THEME_KEYS.length)]
 }
 
 function apply(key) {
@@ -22,20 +19,12 @@ function apply(key) {
   style.setProperty('--on-inv', theme.ink)
 }
 
+// The colour of the day: rolled once per load, never chosen by hand.
+const KEY = randomKey()
+apply(KEY)
+
 export function ThemeProvider({ children }) {
-  const [key, setKey] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored && THEMES[stored] ? stored : randomKey()
-  })
-
-  useEffect(() => {
-    apply(key)
-    localStorage.setItem(STORAGE_KEY, key)
-  }, [key])
-
-  const shuffle = useCallback(() => setKey((current) => randomKey(current)), [])
-
-  return <ThemeContext.Provider value={{ theme: key, shuffle }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={{ theme: KEY }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

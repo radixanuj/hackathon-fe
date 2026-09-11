@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { updatePair } from '../api/meetups'
 import { personMeta, tenureLabel } from '../lib/format'
 import { buildSlots } from '../lib/slots'
@@ -11,7 +12,7 @@ import { useToast } from './Toast'
 
 /** The full-screen "finding someone" moment, held while matching runs. */
 export function MatchingOverlay({ label = 'Finding someone outside your circleâ€¦' }) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[120] grid animate-fade place-items-center bg-white">
       <div className="p-6 text-center">
         <div className="relative flex h-[230px] items-center justify-center gap-2">
@@ -21,7 +22,8 @@ export function MatchingOverlay({ label = 'Finding someone outside your circleâ€
         </div>
         <p className="rx-title m-0 mt-[34px] text-[clamp(24px,3.4vw,34px)]">{label}</p>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
