@@ -5,6 +5,7 @@ import { getUser } from '../api/people'
 import { personMeta, tenureLabel } from '../lib/format'
 import Avatar from './Avatar'
 import Modal from './Modal'
+import NudgeButton from './NudgeButton'
 import { ErrorNote } from './States'
 import { useOverlays } from './Overlays'
 
@@ -74,18 +75,23 @@ export default function ProfileModal({ userId, onClose }) {
               </p>
               <p className="m-0 mt-1 text-[16.5px] font-bold text-acc-ink">{tenureLabel(person)}</p>
             </div>
-            {person.open_to_mentoring ? (
-              <button
-                onClick={() => openRequest(person, 'A first conversation')}
-                className="rx-btn rx-btn-acc rx-btn-lg ml-auto"
-              >
-                Request 30 mins
-              </button>
-            ) : (
-              <p className="ml-auto max-w-[180px] text-[14.5px] text-faint">
-                Not taking session requests right now.
-              </p>
-            )}
+            <div className="ml-auto flex flex-col items-end gap-2.5">
+              {person.open_to_mentoring ? (
+                <button
+                  onClick={() => openRequest(person, 'A first conversation')}
+                  className="rx-btn rx-btn-acc rx-btn-lg"
+                >
+                  Request 30 mins
+                </button>
+              ) : (
+                <p className="m-0 max-w-[180px] text-right text-[14.5px] text-faint">
+                  Not taking session requests right now.
+                </p>
+              )}
+              {/* Thirty minutes is a big ask; a nudge is the version of it that
+                  costs nothing, so it sits under the same corner. */}
+              <NudgeButton person={person} />
+            </div>
           </div>
 
           {person.intro && (

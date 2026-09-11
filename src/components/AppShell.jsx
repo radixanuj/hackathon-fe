@@ -1,6 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { useTheme } from '../theme/ThemeProvider'
 import Logo from './Logo'
 import NotificationBell from './NotificationBell'
 
@@ -8,14 +7,13 @@ const NAV = [
   { to: '/people', label: "Who's Who" },
   { to: '/connect', label: 'Pick a Brain' },
   { to: '/community', label: 'Find Your Crowd' },
-  { to: '/me', label: 'Me' },
   { to: '/about', label: "What's IRL" },
+  { to: '/me', label: 'Me' },
 ]
 
 export default function AppShell({ children }) {
   const { signOut } = useAuth()
   const navigate = useNavigate()
-  const { shuffle } = useTheme()
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white">
@@ -47,14 +45,6 @@ export default function AppShell({ children }) {
           </nav>
 
           <NotificationBell />
-
-          <button
-            onClick={shuffle}
-            title="Shuffle the colour of the day"
-            className="grid h-10 w-10 flex-none cursor-pointer place-items-center rounded-full border-[1.5px] border-edge bg-white transition-transform duration-[400ms] ease-[cubic-bezier(.2,1.3,.3,1)] hover:rotate-[120deg] hover:scale-[1.06] hover:border-acc-soft"
-          >
-            <span className="block h-[15px] w-[15px] rounded-full bg-acc" />
-          </button>
 
           <button
             onClick={signOut}

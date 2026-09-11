@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createAma, listAmas } from '../../api/amas'
 import { getMeta } from '../../api/meta'
 import { createRecommendation, like, listRecommendations, unlike } from '../../api/recommendations'
@@ -17,6 +17,7 @@ export default function LearnTab() {
   const say = useToast()
   const queryClient = useQueryClient()
   const [stream, setStream] = useState('work')
+  const [kind, setKind] = useState('All')
   const [creatingRec, setCreatingRec] = useState(false)
   const [creatingAma, setCreatingAma] = useState(false)
   const [openAma, setOpenAma] = useState(null)
@@ -25,8 +26,25 @@ export default function LearnTab() {
 
   const { data: recs, isPending: recsPending, error: recsError } = useQuery({
     queryKey: ['recommendations', { stream }],
-    queryFn: () => listRecommendations({ stream, sort: 'recent', per_page: 24 }),
+    queryFn: () => listRecommendations({ stream, sort: 'recent', per_page: 48 }),
   })
+
+  // Chip counts come from the actual shelf, so "Podcast · 12" is honest and the
+  // pill disappears the moment nothing on shelf is that kind.
+  const kinds = useMemo(() => {
+    const seen = new Map()
+    for (const rec of recs?.items ?? []) {
+      const label = titleCase(rec.type)
+      seen.set(label, (seen.get(label) ?? 0) + 1)
+    }
+    return Array.from(seen.entries()).map(([label, count]) => ({ label, count }))
+  }, [recs])
+
+  const filtered = useMemo(() => {
+    const items = recs?.items ?? []
+    if (kind === 'All') return items
+    return items.filter((rec) => titleCase(rec.type) === kind)
+  }, [recs, kind])
 
   const { data: amas, isPending: amasPending } = useQuery({
     queryKey: ['amas'],
@@ -49,7 +67,10 @@ export default function LearnTab() {
             {['work', 'leisure'].map((value) => (
               <button
                 key={value}
-                onClick={() => setStream(value)}
+                onClick={() => {
+                  setStream(value)
+                  setKind('All')
+                }}
                 className={
                   stream === value
                     ? 'cursor-pointer rounded-[11px] border-none bg-white px-[22px] py-[11px] text-[15.5px] font-bold shadow-[0_2px_8px_rgb(20_18_15/0.08)]'
@@ -68,14 +89,36 @@ export default function LearnTab() {
 
       <ErrorNote error={recsError} className="mt-5" />
 
+      {kinds.length > 0 && (
+        <div className="mt-[22px] flex flex-wrap gap-2">
+          {[{ label: 'All', count: (recs?.items ?? []).length }, ...kinds].map((chip) => {
+            const on = kind === chip.label
+            return (
+              <button
+                key={chip.label}
+                onClick={() => setKind(chip.label)}
+                className={
+                  on
+                    ? 'flex min-h-[42px] cursor-pointer items-center gap-[7px] rounded-full border-none bg-ink px-4 py-2.5 text-[14.5px] font-bold whitespace-nowrap text-white'
+                    : 'flex min-h-[42px] cursor-pointer items-center gap-[7px] rounded-full border-[1.5px] border-edge-soft bg-white px-4 py-2.5 text-[14.5px] font-semibold whitespace-nowrap text-muted transition-colors duration-200 hover:border-ink hover:text-ink'
+                }
+              >
+                {chip.label}
+                <span className={on ? 'opacity-60' : 'opacity-55'}>{chip.count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <div className="mt-[22px]">
         {recsPending ? (
           <SkeletonCards count={4} height={230} />
-        ) : (recs?.items ?? []).length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Empty title="Nothing recommended yet." hint="Be the first to put something on the shelf." />
         ) : (
           <div className="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
-            {recs.items.map((rec) => (
+            {filtered.map((rec) => (
               <article key={rec.id} className="rx-card rx-card-lift animate-rise rounded-tile p-6">
                 <div className="flex items-start gap-[14px]">
                   <span

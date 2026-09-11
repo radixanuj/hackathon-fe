@@ -15,7 +15,7 @@ import { useToast } from '../components/Toast'
 import { personMeta, tenureLabel } from '../lib/format'
 
 export default function Me() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, signOut } = useAuth()
   const say = useToast()
   const queryClient = useQueryClient()
   const { openProfile } = useOverlays()
@@ -89,10 +89,29 @@ export default function Me() {
           </p>
           <p className="m-0 mt-1 text-[17px] font-bold text-acc-ink">{tenureLabel(profile)}</p>
         </div>
-        <button onClick={() => setEditing(true)} className="rx-btn rx-btn-ghost ml-auto rx-btn-lg">
-          Edit profile
-        </button>
+        <div className="ml-auto flex flex-wrap gap-[10px]">
+          <button
+            onClick={() => setEditing(true)}
+            className="rx-btn rx-btn-dark rx-btn-lg whitespace-nowrap"
+          >
+            Edit profile
+          </button>
+          <button
+            onClick={() => profile?.id && openProfile(profile.id)}
+            className="rx-btn rx-btn-ghost rx-btn-lg whitespace-nowrap"
+          >
+            How others see me
+          </button>
+          <button
+            onClick={signOut}
+            className="rx-btn rx-btn-ghost rx-btn-lg whitespace-nowrap text-muted hover:text-ink"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
+
+      {profile && <ProfileCompletion profile={profile} />}
 
       {profile?.intro && (
         <p className="mt-6 max-w-[640px] text-[18px] leading-[1.55]">{profile.intro}</p>
@@ -281,5 +300,41 @@ export default function Me() {
         />
       )}
     </section>
+  )
+}
+
+/**
+ * Design lines 883-891: a friendly nudge sitting under the header telling you
+ * how full your profile is. We derive the percent from what's actually on the
+ * profile (intro plus three tag sections), so it settles at 100% once the four
+ * things people search on are filled in.
+ */
+function ProfileCompletion({ profile }) {
+  const checks = [
+    { done: (profile.can_talk_about ?? []).length > 0, missing: 'something you can talk about' },
+    { done: (profile.want_to_learn ?? []).length > 0, missing: 'something you want to learn' },
+    { done: (profile.interests ?? []).length > 0, missing: 'an interest or group' },
+    { done: Boolean((profile.intro ?? '').trim()), missing: 'a line about yourself' },
+  ]
+  const missing = checks.filter((c) => !c.done)
+  const pct = Math.round(((checks.length - missing.length) / checks.length) * 100)
+  const hint =
+    pct >= 100
+      ? 'Everything filled in. People can actually find you now.'
+      : `Add ${missing[0].missing} so people know why to reach out.`
+
+  return (
+    <div className="mt-[26px] flex animate-rise flex-wrap items-center gap-[18px] rounded-[22px] border border-line bg-cream p-[22px_24px]">
+      <div className="min-w-0 flex-1 basis-[260px]">
+        <p className="m-0 mb-2.5 text-[16.5px] font-bold">Your profile is {pct}% there</p>
+        <div className="h-[9px] overflow-hidden rounded-full bg-[#EDE8E0]">
+          <div
+            className="h-full rounded-full bg-acc transition-[width] duration-700 ease-[cubic-bezier(.2,.9,.3,1)]"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      <p className="m-0 flex-1 basis-[240px] text-[16px] text-muted text-pretty">{hint}</p>
+    </div>
   )
 }

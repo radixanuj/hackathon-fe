@@ -84,13 +84,32 @@
 @keyframes shuffleA { 0%, 100% { transform: translate(0, 0) rotate(-7deg) } 50% { transform: translate(30px, -12px) rotate(9deg) } }
 @keyframes shuffleB { 0%, 100% { transform: translate(0, 0) rotate(6deg) } 50% { transform: translate(-28px, 14px) rotate(-8deg) } }
 @keyframes shuffleC { 0%, 100% { transform: translate(0, 0) rotate(0) } 50% { transform: translate(6px, -18px) rotate(11deg) } }
-@keyframes boopPoke {
+@keyframes drawUl { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@keyframes boopJab {
   0% { transform: translateX(0) rotate(0) }
-  18% { transform: translateX(14px) rotate(3deg) }
-  34% { transform: translateX(-4px) rotate(-1deg) }
-  52% { transform: translateX(12px) rotate(2deg) }
-  70% { transform: translateX(0) rotate(0) }
+  20% { transform: translateX(-3%) rotate(-1.4deg) }
+  46% { transform: translateX(6%) rotate(2.2deg) }
+  68% { transform: translateX(-1%) rotate(-.6deg) }
   100% { transform: translateX(0) rotate(0) }
+}
+@keyframes boopSpark {
+  0%, 26% { opacity: .35; transform: translateX(-34%) scale(.55) }
+  46% { opacity: 1; transform: translateX(16%) scale(1.18) }
+  72% { opacity: 1; transform: translateX(-4%) scale(.96) }
+  100% { opacity: 1; transform: translateX(0) scale(1) }
+}
+@keyframes boopTakeHit {
+  0%, 34% { transform: translate(0, 0) }
+  50% { transform: translate(1.6%, -4%) }
+  70% { transform: translate(-.5%, 1.5%) }
+  100% { transform: translate(0, 0) }
+}
+
+/* A poke is a flourish, not information - skip it if the OS asks us to. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes boopJab { from, to { transform: none } }
+  @keyframes boopSpark { from, to { opacity: 1; transform: none } }
+  @keyframes boopTakeHit { from, to { transform: none } }
 }
 
 @layer base {

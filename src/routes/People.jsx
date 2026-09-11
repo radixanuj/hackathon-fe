@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getMeta } from '../api/meta'
 import { listUsers, searchTags } from '../api/people'
 import Avatar from '../components/Avatar'
@@ -18,9 +19,26 @@ const GROUPS = [
 
 export default function People() {
   const { openProfile } = useOverlays()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState(GROUPS[2])
   const [selected, setSelected] = useState([])
+
+  // `?profile=<id>` opens the sheet straight away — how a nudge notification
+  // gets you to the person who nudged you. Consumed on arrival, so closing the
+  // sheet does not leave a URL that reopens it on the next render.
+  const deepLinked = searchParams.get('profile')
+  useEffect(() => {
+    if (!deepLinked) return
+    openProfile(Number(deepLinked))
+    setSearchParams(
+      (params) => {
+        params.delete('profile')
+        return params
+      },
+      { replace: true },
+    )
+  }, [deepLinked, openProfile, setSearchParams])
 
   const { data: meta } = useQuery({ queryKey: ['meta'], queryFn: getMeta })
   const { data: skills } = useQuery({
@@ -89,7 +107,9 @@ export default function People() {
 
   return (
     <section className="animate-rise pt-[52px]">
-      <h1 className="rx-display m-0 text-[clamp(36px,5vw,58px)]">Who's Who</h1>
+      <h1 className="rx-display m-0 max-w-[620px] text-[clamp(36px,5vw,58px)] text-pretty">
+        Find someone worth talking to
+      </h1>
       <p className="m-0 mt-4 max-w-[640px] text-[18.5px] leading-[1.5] text-muted text-pretty">
         There's more to your colleagues than a job title and a Zoom square. See what people know,
         what they're into and what they want to learn — and find a reason to start a conversation.

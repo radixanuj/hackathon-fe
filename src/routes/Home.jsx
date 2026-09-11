@@ -2,13 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listUsers } from '../api/people'
+import { listNudges } from '../api/nudges'
 import { currentRound, signUp } from '../api/meetups'
 import { useAuth } from '../auth/AuthContext'
 import Avatar from '../components/Avatar'
+import Boop, { BoopMark, useBoop } from '../components/Boop'
 import { useOverlays } from '../components/Overlays'
 import { ErrorNote } from '../components/States'
 import { useToast } from '../components/Toast'
 import { HERO_PHOTO_ORDER, periodLabel, personMeta, personPhoto, todayLabel } from '../lib/format'
+import { useNudge } from '../lib/nudges'
 
 /** Topics on the design's "Want to learn something?" card. */
 const LEARN_TAGS = ['Leadership', 'Photography', 'Python', 'Personal Finance', 'Presentation Skills']
@@ -24,18 +27,6 @@ const HERO_LAYOUT = [
   { left: '14%', bottom: 0, w: 118, h: 140, anim: 'floatB 9s .3s ease-in-out infinite' },
   { right: '8%', bottom: 0, w: 112, h: 134, anim: 'floatC 12s ease-in-out infinite' },
 ]
-
-/** Design's mascot for the "Nudge-a-Radical" card. */
-function Boop({ poking = false }) {
-  return (
-    <img
-      src="/photos/boop.svg"
-      alt="Boop"
-      className="block h-auto w-full max-w-[260px]"
-      style={{ animation: poking ? 'boopPoke .6s ease-in-out infinite' : undefined }}
-    />
-  )
-}
 
 export default function Home() {
   const { user } = useAuth()
@@ -54,11 +45,25 @@ export default function Home() {
 
   const { data: round } = useQuery({ queryKey: ['meetup-round', 'current'], queryFn: currentRound })
 
+  // Who is already sitting on a nudge from us: you cannot nudge the same person
+  // twice in a row, so the shuffle should not offer them in the first place.
+  const { data: awaiting } = useQuery({
+    queryKey: ['nudges', { scope: 'sent', status: 'outstanding' }],
+    queryFn: () => listNudges({ scope: 'sent', status: 'outstanding', per_page: 100 }),
+  })
+
   const [rolled, setRolled] = useState(null)
+  const [sent, setSent] = useState(null)
   const [rolling, setRolling] = useState(false)
   const [runJoined, setRunJoined] = useState(false)
+  const [poking, poke] = useBoop()
 
   const people = useMemo(() => directory?.items ?? [], [directory])
+
+  const theirTurn = useMemo(
+    () => new Set((awaiting?.items ?? []).map((row) => row.recipient_id)),
+    [awaiting],
+  )
 
   // First-name lookup so the design's hardcoded people (hero mosaic,
   // Parag, Tanisha) can resolve to real roster ids when they exist.
@@ -90,11 +95,19 @@ export default function Home() {
     onError: (caught) => say(caught.message),
   })
 
-  function nudge() {
+  const nudge = useNudge({ onNudged: (row) => setSent(row) })
+
+  /** Pull a different Radical out of the hat. Sends nothing on its own. */
+  function shuffle() {
     if (!people.length) return
+    poke()
+    setSent(null)
     setRolling(true)
     setTimeout(() => {
-      const pool = people.filter((person) => person.id !== rolled?.id && person.id !== user?.id)
+      const pool = people.filter(
+        (person) =>
+          person.id !== rolled?.id && person.id !== user?.id && !theirTurn.has(person.id),
+      )
       setRolled(pool[Math.floor(Math.random() * pool.length)] ?? null)
       setRolling(false)
     }, 1150)
@@ -227,7 +240,7 @@ export default function Home() {
         <article className="relative flex min-h-[280px] min-w-0 animate-rise flex-col justify-between overflow-hidden rounded-card border-[1.5px] border-dashed border-acc-soft bg-cream p-7">
           <div className="relative grid min-h-[118px] place-items-center">
             {rolling ? (
-              <Boop poking />
+              <Boop poking loop className="block h-auto w-full max-w-[260px] text-acc" />
             ) : rolled ? (
               <span className="flex animate-tada items-center gap-[14px]">
                 <Avatar person={rolled} size={70} radius={20} />
@@ -237,27 +250,53 @@ export default function Home() {
                 </span>
               </span>
             ) : (
-              <Boop />
+              <Boop poking={poking} className="block h-auto w-full max-w-[260px] text-acc" />
             )}
           </div>
           <div>
             <h3 className="rx-title m-0 mb-1.5 text-[23px]">
-              {rolling ? 'Finding a Radical…' : rolled ? 'Say hello?' : 'Nudge-a-Radical'}
+              {rolling
+                ? 'Finding a Radical…'
+                : sent
+                  ? 'Nudged.'
+                  : rolled
+                    ? 'Say hello?'
+                    : 'Nudge-a-Radical'}
             </h3>
             <p className="m-0 mb-[18px] text-base leading-[1.45] text-muted">
               {rolling
                 ? 'Ninety-eight people, four continents.'
-                : rolled
-                  ? (rolled.intro?.split('.')[0] ?? personMeta(rolled)) + '.'
-                  : 'A tiny gesture. A quick hello. A good old-fashioned poke. That’s the whole deal.'}
+                : sent
+                  ? `It’s ${rolled.name.split(' ')[0]}’s turn now.` +
+                    (sent.streak > 1 ? ` That’s ${sent.streak} nudges between you.` : '')
+                  : rolled
+                    ? (rolled.intro?.split('.')[0] ?? personMeta(rolled)) + '.'
+                    : 'A tiny gesture. A quick hello. A good old-fashioned poke. That’s the whole deal.'}
             </p>
             <div className="flex flex-wrap gap-[9px]">
-              <button onClick={nudge} disabled={rolling} className="rx-btn rx-btn-acc hover:rotate-[-2deg]">
-                {rolling ? 'Shuffling…' : rolled ? 'Nudge' : 'Nudge someone'}
-              </button>
-              {rolled && (
-                <button onClick={() => setRolled(null)} className="rx-btn rx-btn-ghost">
-                  Back
+              {rolled && !sent ? (
+                <button
+                  onClick={() => nudge.mutate(rolled)}
+                  disabled={rolling || nudge.isPending}
+                  className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
+                >
+                  <BoopMark size={15} poking={poking} loop={nudge.isPending} />
+                  {nudge.isPending ? 'Nudging…' : `Nudge ${rolled.name.split(' ')[0]}`}
+                </button>
+              ) : (
+                <button
+                  onClick={shuffle}
+                  disabled={rolling}
+                  className="rx-btn rx-btn-acc hover:rotate-[-2deg]"
+                >
+                  <BoopMark size={15} poking={poking} loop={rolling} />
+                  {rolling ? 'Shuffling…' : sent ? 'Nudge someone else' : 'Nudge someone'}
+                </button>
+              )}
+
+              {rolled && !sent && (
+                <button onClick={shuffle} disabled={rolling} className="rx-btn rx-btn-ghost">
+                  Someone else
                 </button>
               )}
             </div>
@@ -348,11 +387,13 @@ export default function Home() {
         {/* 7. Story — Tanisha HYROX (spans 2) */}
         <article className="rx-card-dark col-span-2 animate-rise overflow-hidden p-0 transition-transform duration-[350ms] ease-[cubic-bezier(.2,.9,.3,1)] hover:-translate-y-1.5">
           <div className="grid [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
-            <div className="relative grid min-h-[250px] place-items-center bg-[#1D1A16]">
+            {/* Image is absolute so its natural aspect ratio doesn't push the
+                whole row taller — the tile settles at the text side's height. */}
+            <div className="relative min-h-[250px] bg-[#1D1A16]">
               <img
                 src="/photos/tanisha-hyrox.png"
                 alt="Tanisha Singh at HYROX Bangkok"
-                className="h-full w-full object-cover"
+                className="absolute inset-0 block h-full w-full object-cover"
               />
             </div>
             <div className="p-8">

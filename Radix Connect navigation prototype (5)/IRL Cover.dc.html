@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#FFFFFF}
+  body{font-family:'Instrument Sans',system-ui,sans-serif;color:#14120F;-webkit-font-smoothing:antialiased}
+  a{color:#1B3FE3;text-decoration:none}
+  a:hover{color:#14120F}
+  @keyframes floatA{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-18px) rotate(2deg)}}
+  @keyframes floatB{0%,100%{transform:translateY(-12px) rotate(5deg)}50%{transform:translateY(12px) rotate(-3deg)}}
+  @keyframes floatC{0%,100%{transform:translate(0,0)}50%{transform:translate(12px,-14px)}}
+</style>
+</helmet>
+
+<div style="width:1600px;height:1000px;position:relative;overflow:hidden;background:{{ acc }};color:{{ onAcc }};display:flex;flex-direction:column;justify-content:space-between;padding:88px 96px">
+
+  <div style="position:absolute;right:-180px;top:-200px;width:640px;height:640px;border-radius:999px;border:3px solid currentColor;opacity:.24;animation:floatC 18s ease-in-out infinite"></div>
+  <div style="position:absolute;left:-160px;bottom:-240px;width:560px;height:560px;border-radius:999px;background:rgba(255,255,255,.12);animation:floatB 16s ease-in-out infinite"></div>
+  <div style="position:absolute;right:300px;bottom:120px;width:120px;height:120px;border-radius:999px;border:3px solid currentColor;opacity:.3;animation:floatA 12s ease-in-out infinite"></div>
+
+  <div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:32px">
+    <sc-if value="{{ logoLight }}" hint-placeholder-val="{{ true }}">
+      <img src="assets/irl-logo-light.png" alt="IRL" style="display:block;height:66px;width:auto">
+    </sc-if>
+    <sc-if value="{{ logoDark }}">
+      <img src="assets/irl-logo.png" alt="IRL" style="display:block;height:66px;width:auto">
+    </sc-if>
+    <span style="font-size:21px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.8">Radix · Internal</span>
+  </div>
+
+  <div style="position:relative;max-width:1180px">
+    <div>
+      <p style="margin:0 0 26px;font-size:24px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;opacity:.82">In Real Life · Into Radix Life</p>
+      <h1 style="margin:0;font-family:'Bricolage Grotesque',serif;font-weight:800;font-size:136px;line-height:.92;letter-spacing:-.042em;text-wrap:pretty">There are interesting people around you.</h1>
+    </div>
+  </div>
+
+  <div style="position:relative;display:flex;flex-wrap:wrap;gap:16px">
+    <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+      <sc-if value="{{ c.solid }}">
+        <span style="background:#FFFFFF;color:{{ ink }};border-radius:999px;padding:18px 32px;font-size:25px;font-weight:600;line-height:1.1;white-space:nowrap">{{ c.label }}</span>
+      </sc-if>
+      <sc-if value="{{ c.ghost }}">
+        <span style="border:2px solid currentColor;border-radius:999px;padding:18px 32px;font-size:25px;font-weight:600;line-height:1.1;white-space:nowrap">{{ c.label }}</span>
+      </sc-if>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600,&quot;height&quot;:1000},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Cobalt&quot;,&quot;Orange&quot;,&quot;Forest&quot;,&quot;Cherry&quot;,&quot;Violet&quot;,&quot;Sun&quot;],&quot;default&quot;:&quot;Cobalt&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  THEMES = {
+    Cobalt:{acc:'#1B3FE3',on:'#FFFFFF',ink:'#1B3FE3',soft:'#C9D5FF'},
+    Orange:{acc:'#F0500F',on:'#FFFFFF',ink:'#C63D06',soft:'#FFD2BC'},
+    Forest:{acc:'#0B6B45',on:'#FFFFFF',ink:'#0B6B45',soft:'#BEE3D1'},
+    Cherry:{acc:'#D4143C',on:'#FFFFFF',ink:'#B90F33',soft:'#FFC9D3'},
+    Violet:{acc:'#5B21D6',on:'#FFFFFF',ink:'#5B21D6',soft:'#D8C7FF'},
+    Sun:{acc:'#FFCE00',on:'#14120F',ink:'#8A6B00',soft:'#FFE9A3'}
+  };
+  CHIPS = [['Ask someone for 30 minutes.',1],['Find the F1 crowd.',0],['Plan a trek.',0],['Meet someone you never would have.',1]];
+
+  renderVals(){
+    var t = this.THEMES[this.props.theme] || this.THEMES.Cobalt;
+    return {
+      acc:t.acc, onAcc:t.on, ink:t.ink, soft:t.soft,
+      logoDark: this.props.theme === 'Sun', logoLight: this.props.theme !== 'Sun',
+      chips: this.CHIPS.map(function(c){ return {label:c[0], solid:!!c[1], ghost:!c[1]}; })
+    };
+  }
+}
+</script>
+</body>
+</html>

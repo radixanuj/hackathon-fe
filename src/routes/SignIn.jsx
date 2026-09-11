@@ -8,13 +8,19 @@ import Logo from '../components/Logo'
 import { personMeta } from '../lib/format'
 
 /**
- * Demo sign-in: pick yourself out of the roster, then the shared password.
+ * Demo sign-in: pick yourself out of the roster, no password prompt.
  *
  * Typing searches real colleagues and you choose one, so we sign in the person
  * you meant rather than whoever happened to match the string — Sahar Khan and
  * Saif Khan are one keystroke apart. Picking somebody sends their id. A name
  * nobody on the roster answers to still works, and makes a profile on the spot.
+ *
+ * The API still needs a password, so the shared demo one goes on the wire for
+ * everyone. It comes from VITE_SHARED_PASSWORD when set, and falls back to the
+ * seeded default so the app works out of the box.
  */
+const SHARED_PASSWORD = import.meta.env.VITE_SHARED_PASSWORD || 'Radix123'
+
 export default function SignIn() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -24,7 +30,6 @@ export default function SignIn() {
   const [term, setTerm] = useState('')
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
-  const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [pending, setPending] = useState(false)
   const box = useRef(null)
@@ -91,7 +96,7 @@ export default function SignIn() {
     setPending(true)
     setError(null)
     try {
-      await signIn(chosen ? { user_id: chosen.id } : { name: name.trim() }, password)
+      await signIn(chosen ? { user_id: chosen.id } : { name: name.trim() }, SHARED_PASSWORD)
       navigate('/', { replace: true })
     } catch (caught) {
       setError(caught.fieldError?.('name') ?? caught.fieldError?.('password') ?? caught.message)
@@ -100,62 +105,62 @@ export default function SignIn() {
     }
   }
 
+  const SIGN_IN_CHIPS = [
+    'Ask someone for 30 minutes.',
+    'Find the F1 crowd.',
+    'Plan a trek.',
+    'Start a book club.',
+    'Meet someone you never would have.',
+  ]
+
   return (
     <div className="grid min-h-screen [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))]">
-      {/* Left: the pitch, with the same drifting faces as Home. */}
-      <div className="relative hidden overflow-hidden bg-acc p-[clamp(32px,5vw,64px)] text-on-acc md:block">
-        <div className="absolute top-[-80px] right-[-80px] h-[320px] w-[320px] rounded-full border-2 border-current opacity-30" style={{ animation: 'floatC 14s ease-in-out infinite' }} />
-        <div className="absolute right-[90px] bottom-[-120px] h-[240px] w-[240px] rounded-full bg-white/[.14]" />
+      {/* Left: the pitch. */}
+      <div className="relative hidden overflow-hidden bg-acc p-[clamp(34px,5vw,68px)] text-on-acc md:flex md:flex-col md:justify-between md:gap-10">
+        <div className="absolute top-[-90px] right-[-120px] h-[380px] w-[380px] rounded-full border-2 border-current opacity-[.26]" style={{ animation: 'floatC 17s ease-in-out infinite' }} />
+        <div className="absolute bottom-[-120px] left-[-90px] h-[300px] w-[300px] rounded-full bg-white/[.12]" style={{ animation: 'floatB 14s ease-in-out infinite' }} />
 
         {/* Ink-on-accent would swallow half the mark, so it goes flat here. */}
-        <Logo size={25} tone="mono" className="relative text-on-acc" />
+        <Logo size={25} tone="mono" className="relative self-start text-on-acc" />
 
-        <div className="relative mt-[18vh] max-w-[520px]">
-          <h1 className="rx-display m-0 text-[clamp(36px,4.6vw,58px)] leading-[.99]">
-            Ninety-eight people.
-            <br />
-            You've properly met
-            <br />
-            about eleven.
+        <div className="relative max-w-[560px]">
+          <p className="m-0 mb-4 text-[15px] font-bold tracking-[.16em] uppercase opacity-[.82]">
+            In Real Life · Into Radix Life
+          </p>
+          <h1 className="rx-display m-0 text-[clamp(38px,5.4vw,68px)] leading-[.98] tracking-[-.038em] text-pretty">
+            There are interesting people around you that you don't know yet.
           </h1>
-          <p className="m-0 mt-5 text-[19px] leading-[1.45] opacity-[.88]">
-            IRL is for the other eighty-seven — the ones you'd never be put in a meeting with.
+          <p className="m-0 mt-[22px] max-w-[460px] text-[20px] leading-[1.5] opacity-90">
+            98 people. Four continents. One place to actually find each other — beyond roles,
+            meetings and geos.
           </p>
         </div>
 
-        <div className="relative mt-16 flex gap-4">
-          {['AS', 'MR', 'DV', 'MT'].map((face, index) => (
+        <div className="relative flex max-w-[620px] flex-wrap gap-[11px]">
+          {SIGN_IN_CHIPS.map((label) => (
             <span
-              key={face}
-              className="grid h-[112px] w-[94px] place-items-center rounded-[20px] font-display text-[26px] font-extrabold text-ink shadow-[0_16px_36px_rgb(20_18_15/0.14)]"
-              style={{
-                background: ['#EFE6D8', '#E3E7DF', '#E7E4EE', '#F3DFD8'][index],
-                animation: `${index % 2 ? 'floatB' : 'floatA'} ${8 + index}s ease-in-out infinite`,
-              }}
+              key={label}
+              className="animate-pop rounded-full border-[1.5px] border-current px-5 py-3 text-[17px] font-semibold leading-[1.15] whitespace-nowrap"
             >
-              {face}
+              {label}
             </span>
           ))}
         </div>
       </div>
 
       {/* Right: the form. */}
-      <div className="flex items-center justify-center bg-white p-[clamp(24px,5vw,64px)]">
-        <form onSubmit={onSubmit} className="w-full max-w-[420px]">
-          <p className="m-0 mb-3 text-[13.5px] font-bold tracking-[.14em] text-acc-ink uppercase">
-            Sign in
-          </p>
-          <h2 className="rx-display m-0 text-[clamp(32px,4vw,44px)]">Who are you?</h2>
-          <p className="m-0 mt-3 mb-8 text-[17px] leading-[1.5] text-muted">
-            Start typing and pick yourself out of the list, then the shared password. If we don't
-            know you yet, we'll make you a profile.
+      <div className="flex items-center justify-center bg-white p-[clamp(34px,5vw,68px)]">
+        <form onSubmit={onSubmit} className="w-full max-w-[420px] animate-rise">
+          <h2 className="rx-display m-0 text-[clamp(30px,3.6vw,42px)] leading-[1.02]">Come in.</h2>
+          <p className="m-0 mt-3 mb-[30px] text-[18.5px] leading-[1.5] text-muted">
+            Pick your name and you're in. No passwords here.
           </p>
 
-          <p className="rx-label">Your name</p>
+          <p className="m-0 mb-2.5 text-[15.5px] font-bold">Who are you?</p>
           <div ref={box} className="relative mb-4">
             <input
-              className="rx-input"
-              placeholder="Type your name…"
+              className="rx-input min-h-[58px] rounded-[16px] px-[18px] py-[17px] text-[17px]"
+              placeholder="Start typing your name…"
               value={name}
               onChange={(event) => retype(event.target.value)}
               onFocus={() => setOpen(true)}
@@ -209,26 +214,24 @@ export default function SignIn() {
             )}
           </div>
 
-          <p className="rx-label">Shared password</p>
-          <input
-            className="rx-input"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-
           {error && <p className="m-0 mt-4 text-[15px] font-semibold text-[#B90F33]">{error}</p>}
 
           <button
             type="submit"
-            disabled={pending || !name.trim() || !password}
-            className="rx-btn rx-btn-acc mt-7 w-full rounded-ctl py-[17px] text-[17px]"
-            style={{ minHeight: 54 }}
+            disabled={pending || !name.trim()}
+            className="rx-btn rx-btn-acc mt-3.5 w-full rounded-ctl py-[18px] text-[17px]"
+            style={{ minHeight: 58 }}
           >
-            {pending ? 'Signing in…' : 'Let me in'}
+            {pending
+              ? 'Signing in…'
+              : chosen
+                ? `Enter as ${chosen.name.split(' ')[0]}`
+                : 'Enter IRL'}
           </button>
+
+          <p className="m-0 mt-7 text-[15.5px] leading-[1.5] text-faint text-pretty">
+            Built by us, for us. Your profile is visible to colleagues, nobody outside.
+          </p>
         </form>
       </div>
     </div>

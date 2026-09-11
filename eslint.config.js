@@ -23,7 +23,7 @@ export default defineConfig([
       // refresh on those four files and buys a much less fiddly import graph.
       'react-refresh/only-export-components': [
         'error',
-        { allowExportNames: ['useAuth', 'useTheme', 'useToast', 'useOverlays'] },
+        { allowExportNames: ['useAuth', 'useTheme', 'useToast', 'useOverlays', 'useBoop'] },
       ],
     },
   },
